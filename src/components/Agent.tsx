@@ -11,11 +11,12 @@ interface AgentProps {
 }
 
 interface Message {
-  type: 'user' | 'agent' | 'thinking' | 'journey-step' | 'confirmation' | 'document' | 'success';
+  type: 'user' | 'agent' | 'thinking' | 'journey-step' | 'confirmation' | 'document' | 'success' | 'interactive' | 'info-card';
   text?: string;
   steps?: string[];
   data?: any;
   timestamp?: number;
+  actions?: Array<{label: string, action: string, variant?: 'primary' | 'secondary' | 'ghost'}>;
 }
 
 interface JourneyTemplate {
@@ -34,6 +35,10 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
   const [activeJourney, setActiveJourney] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [typingText, setTypingText] = useState('');
+  const [journeySteps, setJourneySteps] = useState<Array<{label: string, status: 'pending' | 'in-progress' | 'completed'}>>([]);
+  const [mobileOTP, setMobileOTP] = useState('');
+  const [aadhaarOTP, setAadhaarOTP] = useState('');
+  const [cardActivationOTP, setCardActivationOTP] = useState('');
 
   const userData = {
     name: "Rahul Sharma",
@@ -44,25 +49,27 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     email: "rahul.sharma@techcorp.in",
     phone: "+91 98765 43210",
     pan: "ABCDE1234F",
-    address: "123, MG Road, Bangalore - 560001"
+    address: "123, MG Road, Bangalore - 560001",
+    aadhaar: "XXXX XXXX 4567",
+    dob: "15/08/1992"
   };
 
   const journeyTemplates: JourneyTemplate[] = [
     {
-      id: 'salary-account',
-      title: 'Open Salary Account',
-      icon: '💰',
-      description: 'Quick 3-step account opening',
-      keywords: ['salary account', 'open account', 'bank account', 'new account'],
-      color: 'from-emerald-500 to-teal-600'
+      id: 'bank-account',
+      title: 'Open Bank Account',
+      icon: '🏦',
+      description: 'Complete digital account opening',
+      keywords: ['bank account', 'savings account', 'open account', 'new account', 'account opening', 'salary account'],
+      color: 'from-blue-500 to-indigo-600'
     },
     {
       id: 'personal-loan',
       title: 'Apply for Loan',
-      icon: '🏦',
+      icon: '💸',
       description: 'Get instant pre-approval',
       keywords: ['loan', 'personal loan', 'borrow', 'credit', 'emi'],
-      color: 'from-blue-500 to-indigo-600'
+      color: 'from-purple-500 to-violet-600'
     },
     {
       id: 'credit-card',
@@ -105,122 +112,6 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     }
   };
 
-  const handleSalaryAccountJourney = async () => {
-    setActiveJourney('salary-account');
-    
-    // Thinking phase
-    setIsThinking(true);
-    await addThinkingSteps([
-      '🔍 Verifying employment details...',
-      '✅ Salary verified: ₹8.5L/year',
-      '📋 Preparing account form...'
-    ]);
-
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
-    setIsThinking(false);
-
-    // Step 1: Confirm details
-    setMessages(prev => [...prev, {
-      type: 'agent',
-      text: "Let's verify your details:",
-      timestamp: Date.now()
-    }]);
-
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    setMessages(prev => [...prev, {
-      type: 'confirmation',
-      data: {
-        title: 'Confirm Your Details',
-        fields: [
-          { label: 'Full Name', value: userData.name, verified: true },
-          { label: 'Employee ID', value: userData.employeeId, verified: true },
-          { label: 'Company', value: userData.company, verified: true },
-          { label: 'Monthly Salary', value: `₹${(userData.salary / 12).toFixed(0)}`, verified: true },
-          { label: 'Email', value: userData.email, verified: true },
-          { label: 'Phone', value: userData.phone, verified: false },
-          { label: 'PAN', value: userData.pan, verified: true },
-        ],
-        action: 'confirm-details'
-      },
-      timestamp: Date.now()
-    }]);
-  };
-
-  const handleConfirmDetails = async () => {
-    setMessages(prev => [...prev, {
-      type: 'user',
-      text: 'Details confirmed ✓',
-      timestamp: Date.now()
-    }]);
-
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    setMessages(prev => [...prev, {
-      type: 'agent',
-      text: "Upload required documents:",
-      timestamp: Date.now()
-    }]);
-
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    setMessages(prev => [...prev, {
-      type: 'document',
-      data: {
-        title: 'Document Upload',
-        documents: [
-          { name: 'PAN Card', status: 'verified', icon: '✅' },
-          { name: 'Aadhaar Card', status: 'required', icon: '📄' },
-          { name: 'Photo', status: 'required', icon: '📸' },
-          { name: 'Signature', status: 'required', icon: '✍️' }
-        ],
-        action: 'upload-documents'
-      },
-      timestamp: Date.now()
-    }]);
-  };
-
-  const handleDocumentUpload = async () => {
-    setMessages(prev => [...prev, {
-      type: 'user',
-      text: 'Documents uploaded ✓',
-      timestamp: Date.now()
-    }]);
-
-    setIsThinking(true);
-    await addThinkingSteps([
-      '📄 Verifying documents...',
-      '✅ Documents verified',
-      '🏦 Submitting application...'
-    ]);
-
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
-    setIsThinking(false);
-
-    setMessages(prev => [...prev, {
-      type: 'success',
-      data: {
-        title: 'Application Submitted Successfully!',
-        applicationNumber: 'SAL' + Date.now().toString().slice(-8),
-        details: [
-          'Status: Under Review',
-          'Account: Salary Savings (Zero Balance)',
-          'Approval: 24-48 hours',
-          'Free Platinum Debit Card included'
-        ],
-        nextSteps: [
-          'Document verification in progress',
-          'Approval notification via SMS & email',
-          'Card delivery in 5-7 days post-approval'
-        ]
-      },
-      timestamp: Date.now()
-    }]);
-
-    setActiveJourney(null);
-  };
 
   const handlePersonalLoanJourney = async () => {
     setActiveJourney('personal-loan');
@@ -771,6 +662,635 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     }]);
 
     setActiveJourney(null);
+    // Keep journey steps visible to show completed progress
+  };
+
+  const handleBankAccountJourney = async () => {
+    setActiveJourney('bank-account');
+    setJourneySteps([
+      { label: 'Mobile Verification', status: 'pending' },
+      { label: 'PAN & Aadhaar Details', status: 'pending' },
+      { label: 'e-KYC Consent', status: 'pending' },
+      { label: 'Aadhaar OTP Verification', status: 'pending' },
+      { label: 'Video KYC Scheduling', status: 'pending' },
+      { label: 'Account Setup', status: 'pending' },
+      { label: 'Account Activation', status: 'pending' }
+    ]);
+
+    // Step 1: Mobile Number Verification
+    setJourneySteps(prev => prev.map((step, i) => i === 0 ? {...step, status: 'in-progress'} : step));
+    
+    setIsThinking(true);
+    await addThinkingSteps([
+      '📱 Verifying mobile number...',
+      '✅ Number linked to profile'
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
+    setIsThinking(false);
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: `Great! I see your mobile number is **${userData.phone}**. I'll send you a verification code to get started.`,
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    setMessages(prev => [...prev, {
+      type: 'info-card',
+      data: {
+        icon: '📲',
+        title: 'OTP sent to your mobile',
+        subtitle: `A 6-digit code has been sent to ${userData.phone}`,
+        items: [
+          { label: 'Valid for', value: '10 minutes', icon: '⏱️' },
+          { label: 'Didn\'t receive?', value: 'Resend in 30s', icon: '🔄' }
+        ],
+        input: {
+          type: 'otp',
+          placeholder: 'Enter 6-digit OTP',
+          id: 'mobile-otp'
+        }
+      },
+      actions: [
+        { label: 'Verify OTP', action: 'verify-mobile-otp', variant: 'primary' }
+      ],
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleVerifyMobileOTP = async () => {
+    const otpValue = mobileOTP || '123456';
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: `${otpValue} ✓`,
+      timestamp: Date.now()
+    }]);
+    setMobileOTP('');
+
+    setJourneySteps(prev => prev.map((step, i) => i === 0 ? {...step, status: 'completed'} : step));
+    
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: '✅ Mobile verified successfully! Now let\'s verify your identity with PAN and Aadhaar.',
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Step 2: PAN & Aadhaar Entry
+    setJourneySteps(prev => prev.map((step, i) => i === 1 ? {...step, status: 'in-progress'} : step));
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    setMessages(prev => [...prev, {
+      type: 'interactive',
+      text: `I've pre-filled your details from our records. Please verify:`,
+      data: {
+        fields: [
+          { label: 'PAN Number', value: userData.pan, icon: '🆔', verified: true },
+          { label: 'Aadhaar Number', value: userData.aadhaar, icon: '🔐', editable: true },
+          { label: 'Date of Birth', value: userData.dob, icon: '📅', verified: true },
+          { label: 'Name as per Aadhaar', value: userData.name, icon: '👤', verified: true }
+        ]
+      },
+      actions: [
+        { label: 'Looks Good, Continue', action: 'verify-pan-aadhaar', variant: 'primary' }
+      ],
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleVerifyPanAadhaar = async () => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: 'Confirmed ✓',
+      timestamp: Date.now()
+    }]);
+
+    setJourneySteps(prev => prev.map((step, i) => i === 1 ? {...step, status: 'completed'} : step));
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    // Step 3: e-KYC Consent
+    setJourneySteps(prev => prev.map((step, i) => i === 2 ? {...step, status: 'in-progress'} : step));
+
+    setIsThinking(true);
+    await addThinkingSteps([
+      '🔐 Connecting to UIDAI...',
+      '📋 Preparing e-KYC request...'
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
+    setIsThinking(false);
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "To complete your KYC digitally, I need your consent to fetch details from UIDAI's Aadhaar database. This is secure and instant!",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    setMessages(prev => [...prev, {
+      type: 'info-card',
+      data: {
+        icon: '🔒',
+        title: 'e-KYC Consent Required',
+        subtitle: 'We\'ll fetch your address and identity from Aadhaar',
+        items: [
+          { label: 'Data Source', value: 'UIDAI (Aadhaar)', icon: '🏛️' },
+          { label: 'Purpose', value: 'Savings Account KYC', icon: '🎯' },
+          { label: 'Bank', value: 'HDFC Bank Ltd', icon: '🏦' },
+          { label: 'Security', value: 'End-to-end encrypted', icon: '🔐' }
+        ]
+      },
+      actions: [
+        { label: 'I Consent, Proceed', action: 'ekyc-consent', variant: 'primary' },
+        { label: 'Learn More', action: 'learn-ekyc', variant: 'ghost' }
+      ],
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleEKYCConsent = async () => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: 'I consent ✓',
+      timestamp: Date.now()
+    }]);
+
+    setJourneySteps(prev => prev.map((step, i) => i === 2 ? {...step, status: 'completed'} : step));
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    // Step 4: Aadhaar OTP Verification
+    setJourneySteps(prev => prev.map((step, i) => i === 3 ? {...step, status: 'in-progress'} : step));
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "Perfect! I'm sending an OTP to your Aadhaar-linked mobile number for final verification.",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 700));
+
+    setMessages(prev => [...prev, {
+      type: 'info-card',
+      data: {
+        icon: '📱',
+        title: 'Aadhaar OTP Sent',
+        subtitle: `Code sent to XXXXXX4210 (linked with Aadhaar)`,
+        items: [
+          { label: 'Valid for', value: '10 minutes', icon: '⏱️' },
+          { label: 'Attempts remaining', value: '3', icon: '🔢' }
+        ],
+        input: {
+          type: 'otp',
+          placeholder: 'Enter 6-digit OTP',
+          id: 'aadhaar-otp'
+        }
+      },
+      actions: [
+        { label: 'Verify OTP', action: 'verify-aadhaar-otp', variant: 'primary' }
+      ],
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleVerifyAadhaarOTP = async () => {
+    const otpValue = aadhaarOTP || '654321';
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: `${otpValue} ✓`,
+      timestamp: Date.now()
+    }]);
+    setAadhaarOTP('');
+
+    setJourneySteps(prev => prev.map((step, i) => i === 3 ? {...step, status: 'completed'} : step));
+
+    setIsThinking(true);
+    await addThinkingSteps([
+      '🔐 Validating Aadhaar OTP...',
+      '✅ e-KYC data retrieved successfully',
+      '📋 Address and identity confirmed'
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
+    setIsThinking(false);
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "Excellent! Your e-KYC is complete. Here's what we fetched from Aadhaar:",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    setMessages(prev => [...prev, {
+      type: 'interactive',
+      text: `📍 **Address from Aadhaar**\n${userData.address}`,
+      data: {
+        fields: [
+          { label: 'Name', value: userData.name, icon: '👤', verified: true },
+          { label: 'Date of Birth', value: userData.dob, icon: '📅', verified: true },
+          { label: 'Address', value: userData.address, icon: '📍', verified: true }
+        ]
+      },
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Step 5: Video KYC Scheduling
+    setJourneySteps(prev => prev.map((step, i) => i === 4 ? {...step, status: 'in-progress'} : step));
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "Now, let's schedule your Video KYC to upgrade to a full-access account. This is a quick 5-7 minute video call.",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 700));
+
+    setMessages(prev => [...prev, {
+      type: 'info-card',
+      data: {
+        icon: '📹',
+        title: 'Video KYC Scheduling',
+        subtitle: 'Required for full account access & higher limits',
+        items: [
+          { label: 'Duration', value: '5-7 minutes', icon: '⏱️' },
+          { label: 'Documents needed', value: 'PAN & Aadhaar', icon: '📄' },
+          { label: 'Process', value: 'Live signature + Liveness check', icon: '✍️' },
+          { label: 'Security', value: 'Encrypted & Recorded', icon: '🔒' }
+        ]
+      },
+      actions: [
+        { label: '📅 Today 2:00 PM', action: 'schedule-vkyc-slot1', variant: 'primary' },
+        { label: '📅 Today 4:00 PM', action: 'schedule-vkyc-slot2', variant: 'secondary' },
+        { label: 'Choose Another Time', action: 'schedule-vkyc-later', variant: 'ghost' }
+      ],
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleScheduleVKYC = async (slot: string) => {
+    const slotLabel = slot === 'schedule-vkyc-slot1' ? 'Today 2:00 PM' : 
+                      slot === 'schedule-vkyc-slot2' ? 'Today 4:00 PM' : 'Later';
+    
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: `${slotLabel} 📅`,
+      timestamp: Date.now()
+    }]);
+
+    setJourneySteps(prev => prev.map((step, i) => i === 4 ? {...step, status: 'completed'} : step));
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: `Perfect! Video KYC scheduled for ${slotLabel}. You'll get a reminder 15 minutes before.`,
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    setMessages(prev => [...prev, {
+      type: 'info-card',
+      data: {
+        icon: '✅',
+        title: 'Video KYC Confirmed',
+        subtitle: `Scheduled for ${slotLabel}`,
+        items: [
+          { label: 'Reminder', value: '15 mins before via SMS', icon: '📱' },
+          { label: 'Duration', value: '5-7 minutes', icon: '⏱️' }
+        ]
+      },
+      actions: [
+        { label: '📅 Add to Calendar', action: 'add-calendar', variant: 'secondary' }
+      ],
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 700));
+
+    // Step 6: Account Setup
+    setJourneySteps(prev => prev.map((step, i) => i === 5 ? {...step, status: 'in-progress'} : step));
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "Now let's set up your account preferences. Where should I send your debit card?",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    setMessages(prev => [...prev, {
+      type: 'interactive',
+      text: `I've pre-filled your address from Aadhaar. You can change it if needed:`,
+      data: {
+        fields: [
+          { label: 'Delivery Address', value: userData.address, icon: '📍', editable: true },
+          { label: 'UPI ID', value: 'rahul@hdfcbank', icon: '💰', editable: true },
+          { label: 'Account Type', value: 'Savings Account (Regular)', icon: '🏦', verified: true },
+          { label: 'Notifications', value: 'SMS + Email + App', icon: '🔔', verified: true }
+        ]
+      },
+      actions: [
+        { label: 'Looks Good, Continue', action: 'confirm-preferences', variant: 'primary' }
+      ],
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleConfirmPreferences = async () => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: 'Confirmed ✓',
+      timestamp: Date.now()
+    }]);
+
+    setJourneySteps(prev => prev.map((step, i) => i === 5 ? {...step, status: 'completed'} : step));
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    // Step 7: Account Activation
+    setJourneySteps(prev => prev.map((step, i) => i === 6 ? {...step, status: 'in-progress'} : step));
+
+    setIsThinking(true);
+    await addThinkingSteps([
+      '🏦 Creating your HDFC account...',
+      '💳 Generating virtual debit card...',
+      '🔐 Setting up UPI...',
+      '✉️ Preparing account details...',
+      '✅ Account activated successfully!'
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
+    setIsThinking(false);
+
+    setJourneySteps(prev => prev.map((step, i) => i === 6 ? {...step, status: 'completed'} : step));
+
+    const accountNumber = '50100' + Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
+    const virtualCardNumber = '4532' + Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
+    
+    setMessages(prev => [...prev, {
+      type: 'success',
+      data: {
+        title: '🎉 Your HDFC Account is Live!',
+        accountNumber: accountNumber,
+        details: [
+          `Account Number: ${accountNumber}`,
+          'IFSC Code: HDFC0000001',
+          'Branch: MG Road, Bangalore',
+          'Account Type: Savings Account',
+          `Virtual Card: ${virtualCardNumber.slice(0, 4)} XXXX XXXX ${virtualCardNumber.slice(-4)}`,
+          'UPI ID: rahul@hdfcbank',
+          'Min Balance: ₹10,000 (MAB)',
+          'Welcome Bonus: ₹500 on first txn'
+        ],
+        nextSteps: [
+          '📹 Video KYC scheduled - Complete for full access',
+          '💳 Physical debit card arriving in 7-10 days',
+          '📱 Virtual card active - Use now!',
+          '💰 Start transacting via UPI, IMPS, NEFT'
+        ]
+      },
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "🎊 Congratulations! Your account is ready. What would you like to do next?",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    setMessages(prev => [...prev, {
+      type: 'info-card',
+      data: {
+        icon: '🚀',
+        title: 'Quick Actions',
+        subtitle: 'Get the most out of your new account',
+        items: []
+      },
+      actions: [
+        { label: '📧 Email Account Details', action: 'email-details', variant: 'primary' },
+        { label: '💳 Activate Virtual Card', action: 'activate-vcard', variant: 'primary' },
+        { label: '📱 Download Mobile App', action: 'download-app', variant: 'secondary' },
+        { label: '👤 Add Nominee', action: 'add-nominee', variant: 'secondary' }
+      ],
+      timestamp: Date.now()
+    }]);
+
+    setActiveJourney(null);
+    // Keep journey steps visible to show completed progress
+  };
+
+  const handleEmailAccountDetails = async () => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: 'Email me the details 📧',
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    setIsThinking(true);
+    await addThinkingSteps([
+      '📧 Composing email with account details...',
+      '✅ Email sent successfully!'
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
+    setIsThinking(false);
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: `✅ Account details sent to **${userData.email}**\n\nCheck your inbox for complete account information, virtual card details, and next steps guide.`,
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleActivateVirtualCard = async () => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: 'Activate virtual card 💳',
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "Let's activate your virtual debit card. For security, I need to verify a few details first.",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    const virtualCardNumber = '4532' + Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
+
+    setMessages(prev => [...prev, {
+      type: 'interactive',
+      text: `Your virtual card has been generated. Please verify the last 4 digits:`,
+      data: {
+        fields: [
+          { label: 'Card Number', value: `${virtualCardNumber.slice(0, 4)} XXXX XXXX ${virtualCardNumber.slice(-4)}`, icon: '💳', verified: true },
+          { label: 'Card Type', value: 'HDFC Bank Visa Debit', icon: '💎', verified: true },
+          { label: 'Valid Until', value: '12/2028', icon: '📅', verified: true },
+          { label: 'Last 4 Digits', value: virtualCardNumber.slice(-4), icon: '🔢', verified: true }
+        ]
+      },
+      actions: [
+        { label: 'Verify & Continue', action: 'verify-card-details', variant: 'primary' }
+      ],
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleVerifyCardDetails = async () => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: 'Card verified ✓',
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "Great! Now let's set up your card security. I'll send an OTP to your registered mobile.",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    setMessages(prev => [...prev, {
+      type: 'info-card',
+      data: {
+        icon: '🔐',
+        title: 'Card Activation OTP',
+        subtitle: `OTP sent to ${userData.phone}`,
+        items: [
+          { label: 'Valid for', value: '5 minutes', icon: '⏱️' },
+          { label: 'Purpose', value: 'Virtual card activation', icon: '💳' }
+        ],
+        input: {
+          type: 'otp',
+          placeholder: 'Enter 6-digit OTP',
+          id: 'card-activation-otp'
+        }
+      },
+      actions: [
+        { label: 'Verify OTP & Continue', action: 'verify-card-otp', variant: 'primary' }
+      ],
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleVerifyCardOTP = async () => {
+    const otpValue = cardActivationOTP || '123456';
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: `${otpValue} ✓`,
+      timestamp: Date.now()
+    }]);
+    setCardActivationOTP('');
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "Perfect! Now set transaction limits for your virtual card:",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    setMessages(prev => [...prev, {
+      type: 'interactive',
+      text: `You can customize these limits anytime in the app:`,
+      data: {
+        fields: [
+          { label: 'Daily Online Limit', value: '₹50,000', icon: '🌐', editable: true },
+          { label: 'Per Transaction Limit', value: '₹25,000', icon: '💰', editable: true },
+          { label: 'International Usage', value: 'Disabled (Enable in app)', icon: '🌍', verified: true },
+          { label: 'Contactless Payment', value: 'Enabled', icon: '📲', verified: true }
+        ]
+      },
+      actions: [
+        { label: 'Accept & Activate Card', action: 'finalize-card-activation', variant: 'primary' }
+      ],
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleFinalizeCardActivation = async () => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: 'Limits confirmed ✓',
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    setIsThinking(true);
+    await addThinkingSteps([
+      '💳 Activating your virtual debit card...',
+      '🔐 Setting up security protocols...',
+      '⚙️ Configuring transaction limits...',
+      '✅ Card activated successfully!'
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
+    setIsThinking(false);
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "🎉 Your virtual debit card is now active and ready for online transactions!",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    const virtualCardNumber = '4532' + Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
+
+    setMessages(prev => [...prev, {
+      type: 'info-card',
+      data: {
+        icon: '💳',
+        title: 'Virtual Card Active',
+        subtitle: 'Use for online payments immediately',
+        items: [
+          { label: 'Card Number', value: `${virtualCardNumber.slice(0, 4)} XXXX XXXX ${virtualCardNumber.slice(-4)}`, icon: '💳' },
+          { label: 'Card Type', value: 'Visa Debit', icon: '💎' },
+          { label: 'Valid Until', value: '12/2028', icon: '📅' },
+          { label: 'CVV', value: 'View in app', icon: '🔒' },
+          { label: 'Daily Limit', value: '₹50,000', icon: '💰' },
+          { label: 'Status', value: 'Active ✓', icon: '✅' }
+        ]
+      },
+      actions: [
+        { label: '📱 View Full Card Details', action: 'view-card-app', variant: 'primary' },
+        { label: '⚙️ Manage Card Settings', action: 'manage-card', variant: 'secondary' }
+      ],
+      timestamp: Date.now()
+    }]);
   };
 
   const detectJourney = (query: string): JourneyTemplate | null => {
@@ -799,8 +1319,8 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
       await new Promise(resolve => setTimeout(resolve, 800));
       
       switch (journey.id) {
-        case 'salary-account':
-          await handleSalaryAccountJourney();
+        case 'bank-account':
+          await handleBankAccountJourney();
           break;
         case 'personal-loan':
           await handlePersonalLoanJourney();
@@ -844,7 +1364,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
       
       setMessages(prev => [...prev, {
         type: 'agent',
-        text: "I'm your AI financial agent, ready to help with various banking and financial services. I can assist you with:\n\n• Opening salary accounts\n• Loan applications\n• Tax planning & optimization\n• Investment portfolio creation\n• Insurance recommendations\n• Credit card applications\n\nWhat would you like to explore today?",
+        text: "I'm your AI financial agent, ready to help with various banking and financial services. I can assist you with:\n\n• Opening bank accounts (Savings & Salary)\n• Loan applications\n• Credit card applications\n• Tax planning & optimization\n• Investment portfolio creation\n• Insurance recommendations\n\nWhat would you like to explore today?",
         timestamp: Date.now()
       }]);
     }
@@ -862,8 +1382,8 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     
     // Directly call the appropriate journey handler
     switch (template.id) {
-      case 'salary-account':
-        await handleSalaryAccountJourney();
+      case 'bank-account':
+        await handleBankAccountJourney();
         break;
       case 'personal-loan':
         await handlePersonalLoanJourney();
@@ -875,7 +1395,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:from-gray-900 dark:to-gray-900">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
       <Sidebar 
         user={userData} 
@@ -886,10 +1406,10 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
       {/* Main Content */}
       <div className="flex-1">
-        <div className="max-w-[1800px] mx-auto h-full flex gap-4 p-4">
-          {/* Main Chat Area */}
-          <div className="flex-1 flex">
-            <Card className="flex-1 flex flex-col rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
+          <div className="max-w-[1800px] mx-auto h-full flex gap-4 p-4">
+            {/* Main Chat Area */}
+            <div className="flex-1 flex">
+              <Card className="flex-1 flex flex-col rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
 
               {/* Messages Area */}
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -909,13 +1429,18 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                       
                       {/* Quick Actions - Compact Grid */}
                       <div className="grid grid-cols-3 gap-3">
-                        {journeyTemplates.map((template) => (
+                        {journeyTemplates.map((template, idx) => (
                           <button
                             key={template.id}
                             onClick={() => handleQuickAction(template)}
                             disabled={isThinking}
-                            className="group p-4 bg-white dark:from-gray-800 dark:to-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-all hover:shadow-md disabled:opacity-50 text-center"
+                            className="group relative p-4 bg-white dark:from-gray-800 dark:to-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-all hover:shadow-md disabled:opacity-50 text-center"
                           >
+                            {idx === 0 && (
+                              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+                                ⚡ 5 mins
+                              </div>
+                            )}
                             <div className="text-3xl mb-2">{template.icon}</div>
                             <h4 className="text-gray-900 dark:text-white font-semibold text-xs leading-tight">{template.title}</h4>
                           </button>
@@ -961,6 +1486,149 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                           </div>
                         )}
 
+                        {msg.type === 'interactive' && (
+                          <div className="flex justify-start">
+                            <div className="max-w-[85%] w-full">
+                              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-tl-md shadow-sm overflow-hidden">
+                                {msg.text && (
+                                  <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{msg.text}</p>
+                                  </div>
+                                )}
+                                {msg.data?.fields && (
+                                  <div className="p-3 space-y-2">
+                                    {msg.data.fields.map((field: any, i: number) => (
+                                      <div key={i} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                        <div className="flex items-center space-x-2 flex-1">
+                                          <span className="text-lg">{field.icon}</span>
+                                          <div className="flex-1">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">{field.label}</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">{field.value}</p>
+                                          </div>
+                                        </div>
+                                        {field.verified && (
+                                          <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">✓</Badge>
+                                        )}
+                                        {field.editable && (
+                                          <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Edit</button>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {msg.actions && msg.actions.length > 0 && (
+                                  <div className="p-3 bg-gray-50 dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex gap-2">
+                                    {msg.actions.map((action: any, i: number) => (
+                                      <Button 
+                                        key={i}
+                                        onClick={() => {
+                                          if (action.action === 'verify-mobile-otp') handleVerifyMobileOTP();
+                                          else if (action.action === 'verify-pan-aadhaar') handleVerifyPanAadhaar();
+                                          else if (action.action === 'ekyc-consent') handleEKYCConsent();
+                                          else if (action.action === 'verify-aadhaar-otp') handleVerifyAadhaarOTP();
+                                          else if (action.action === 'confirm-preferences') handleConfirmPreferences();
+                                          else if (action.action === 'verify-card-details') handleVerifyCardDetails();
+                                          else if (action.action === 'verify-card-otp') handleVerifyCardOTP();
+                                          else if (action.action === 'finalize-card-activation') handleFinalizeCardActivation();
+                                        }}
+                                        variant={action.variant === 'ghost' ? 'outline' : action.variant === 'secondary' ? 'secondary' : 'default'}
+                                        className="flex-1 text-sm h-9"
+                                      >
+                                        {action.label}
+                                      </Button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {msg.type === 'info-card' && (
+                          <div className="flex justify-start">
+                            <div className="max-w-[85%] w-full">
+                              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl rounded-tl-md shadow-sm overflow-hidden">
+                                <div className="p-4">
+                                  <div className="flex items-start space-x-3 mb-3">
+                                    <div className="text-3xl">{msg.data?.icon}</div>
+                                    <div className="flex-1">
+                                      <h4 className="font-semibold text-sm text-gray-900 dark:text-white">{msg.data?.title}</h4>
+                                      {msg.data?.subtitle && (
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{msg.data.subtitle}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {msg.data?.items && msg.data.items.length > 0 && (
+                                    <div className="space-y-2 mb-3">
+                                      {msg.data.items.map((item: any, i: number) => (
+                                        <div key={i} className="flex items-center justify-between text-xs bg-white/50 dark:bg-gray-800/50 rounded-lg p-2">
+                                          <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                            {item.icon && <span>{item.icon}</span>}
+                                            {item.label}
+                                          </span>
+                                          <span className="font-medium text-gray-900 dark:text-white">{item.value}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {msg.data?.input && (
+                                    <div className="mb-3">
+                                      <Input
+                                        type={msg.data.input.type === 'otp' ? 'text' : msg.data.input.type}
+                                        placeholder={msg.data.input.placeholder}
+                                        value={
+                                          msg.data.input.id === 'mobile-otp' ? mobileOTP :
+                                          msg.data.input.id === 'aadhaar-otp' ? aadhaarOTP :
+                                          msg.data.input.id === 'card-activation-otp' ? cardActivationOTP : ''
+                                        }
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          if (msg.data.input.id === 'mobile-otp') {
+                                            if (/^\d{0,6}$/.test(value)) setMobileOTP(value);
+                                          } else if (msg.data.input.id === 'aadhaar-otp') {
+                                            if (/^\d{0,6}$/.test(value)) setAadhaarOTP(value);
+                                          } else if (msg.data.input.id === 'card-activation-otp') {
+                                            if (/^\d{0,6}$/.test(value)) setCardActivationOTP(value);
+                                          }
+                                        }}
+                                        maxLength={msg.data.input.maxLength || (msg.data.input.type === 'otp' ? 6 : undefined)}
+                                        className="text-center text-lg tracking-widest font-mono"
+                                        autoFocus
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                                {msg.actions && msg.actions.length > 0 && (
+                                  <div className="p-3 bg-white/50 dark:bg-gray-800/50 border-t border-blue-200 dark:border-blue-800 flex flex-wrap gap-2">
+                                    {msg.actions.map((action: any, i: number) => (
+                                      <Button 
+                                        key={i}
+                                        onClick={() => {
+                                          if (action.action === 'verify-mobile-otp') handleVerifyMobileOTP();
+                                          else if (action.action === 'ekyc-consent') handleEKYCConsent();
+                                          else if (action.action === 'verify-aadhaar-otp') handleVerifyAadhaarOTP();
+                                          else if (action.action === 'schedule-vkyc-slot1') handleScheduleVKYC('schedule-vkyc-slot1');
+                                          else if (action.action === 'schedule-vkyc-slot2') handleScheduleVKYC('schedule-vkyc-slot2');
+                                          else if (action.action === 'schedule-vkyc-later') handleScheduleVKYC('schedule-vkyc-later');
+                                          else if (action.action === 'email-details') handleEmailAccountDetails();
+                                          else if (action.action === 'activate-vcard') handleActivateVirtualCard();
+                                          else if (action.action === 'verify-card-details') handleVerifyCardDetails();
+                                          else if (action.action === 'verify-card-otp') handleVerifyCardOTP();
+                                          else if (action.action === 'finalize-card-activation') handleFinalizeCardActivation();
+                                        }}
+                                        variant={action.variant === 'ghost' ? 'outline' : action.variant === 'secondary' ? 'secondary' : 'default'}
+                                        className="flex-1 text-sm h-9"
+                                      >
+                                        {action.label}
+                                      </Button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {msg.type === 'confirmation' && msg.data && (
                           <div className="flex justify-start">
                             <div className="max-w-[85%] w-full">
@@ -998,12 +1666,20 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                 <div className="p-3 bg-gray-50 dark:bg-gray-800 border-t">
                                   <Button 
                                     onClick={() => {
-                                      if (msg.data.action === 'confirm-details') {
-                                        handleConfirmDetails();
-                                      } else if (msg.data.action === 'confirm-health') {
+                                      if (msg.data.action === 'confirm-health') {
                                         handleConfirmHealth();
                                       } else if (msg.data.action === 'confirm-card-details') {
                                         handleConfirmCardDetails();
+                                      } else if (msg.data.action === 'verify-mobile-otp') {
+                                        handleVerifyMobileOTP();
+                                      } else if (msg.data.action === 'verify-pan-aadhaar') {
+                                        handleVerifyPanAadhaar();
+                                      } else if (msg.data.action === 'ekyc-consent') {
+                                        handleEKYCConsent();
+                                      } else if (msg.data.action === 'verify-aadhaar-otp') {
+                                        handleVerifyAadhaarOTP();
+                                      } else if (msg.data.action === 'confirm-preferences') {
+                                        handleConfirmPreferences();
                                       }
                                     }}
                                     className="w-full h-9 text-sm"
@@ -1016,50 +1692,6 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                           </div>
                         )}
 
-                        {msg.type === 'document' && msg.data && (
-                          <div className="flex justify-start">
-                            <div className="max-w-[85%] w-full">
-                              <Card className="border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden rounded-lg">
-                                <div className="bg-primary p-4">
-                                  <h4 className="font-semibold text-sm text-white flex items-center">
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                    </svg>
-                                    {msg.data.title}
-                                  </h4>
-                                </div>
-                                <div className="p-4 space-y-3">
-                                  {msg.data.documents.map((doc: any, i: number) => (
-                                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-                                      <div className="flex items-center space-x-3">
-                                        <span className="text-2xl">{doc.icon}</span>
-                                        <span className="text-sm font-medium text-gray-900 dark:text-white">{doc.name}</span>
-                                      </div>
-                                      {doc.status === 'verified' ? (
-                                        <Badge className="bg-green-100 text-green-700 border-green-200">Verified</Badge>
-                                      ) : doc.status === 'required' ? (
-                                        <Button size="sm" variant="outline" className="text-xs">
-                                          Upload
-                                        </Button>
-                                      ) : null}
-                                    </div>
-                                  ))}
-                                </div>
-                                <div className="p-3 bg-gray-50 dark:bg-gray-800 border-t">
-                                  <Button 
-                                    onClick={handleDocumentUpload}
-                                    className="w-full h-9 text-sm"
-                                  >
-                                    Submit Documents
-                                    <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                    </svg>
-                                  </Button>
-                                </div>
-                              </Card>
-                            </div>
-                          </div>
-                        )}
 
                         {msg.type === 'journey-step' && msg.data && (
                           <div className="flex justify-start">
@@ -1355,7 +1987,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
           </div>
 
           {/* Right Sidebar - Task Progress (Conditional) */}
-          {(messages.length > 0 || activeJourney) && (
+          {(messages.length > 0 || activeJourney || journeySteps.length > 0) && (
             <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto">
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 bg-white dark:bg-gray-800">
                 <h3 className="font-semibold text-sm text-gray-900 dark:text-white flex items-center">
@@ -1380,6 +2012,48 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                           {journeyTemplates.find(t => t.id === activeJourney)?.title || 'Processing...'}
                         </p>
                       </div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Detailed Journey Steps */}
+                {journeySteps.length > 0 && (
+                  <Card className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-3">Step-by-Step Progress</h4>
+                    <div className="space-y-3">
+                      {journeySteps.map((step, idx) => (
+                        <div key={idx} className="flex items-start space-x-3">
+                          <div className="flex-shrink-0 mt-0.5">
+                            {step.status === 'completed' ? (
+                              <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            ) : step.status === 'in-progress' ? (
+                              <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                              </div>
+                            ) : (
+                              <div className="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-medium ${
+                              step.status === 'completed' ? 'text-green-700 dark:text-green-400' :
+                              step.status === 'in-progress' ? 'text-blue-700 dark:text-blue-400' :
+                              'text-gray-500 dark:text-gray-500'
+                            }`}>
+                              {step.label}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              {step.status === 'completed' ? '✓ Done' : 
+                               step.status === 'in-progress' ? 'In Progress...' : 
+                               'Pending'}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </Card>
                 )}

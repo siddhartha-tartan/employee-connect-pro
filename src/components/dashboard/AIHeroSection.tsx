@@ -10,28 +10,32 @@ interface AIHeroSectionProps {
 export const AIHeroSection: React.FC<AIHeroSectionProps> = ({ userName, onOpenChat, onNavigate }) => {
   const quickActions = [
     { 
-      icon: '🚗', 
-      label: 'Plan Car Purchase', 
-      description: 'Get loan options & savings plan',
-      gradient: 'from-blue-500 to-cyan-500'
+      icon: '🏦', 
+      label: 'Open Bank Account', 
+      description: 'Digital account in 5 minutes',
+      gradient: 'from-blue-500 to-indigo-600',
+      navigateToAgent: true
     },
     { 
       icon: '🏠', 
       label: 'Home Loan', 
       description: 'Pre-approved up to ₹50L',
-      gradient: 'from-purple-500 to-pink-500'
+      gradient: 'from-purple-500 to-pink-500',
+      navigateToAgent: false
     },
     { 
       icon: '📊', 
       label: 'Tax Optimization', 
       description: 'Save up to ₹1.5L this year',
-      gradient: 'from-orange-500 to-red-500'
+      gradient: 'from-orange-500 to-red-500',
+      navigateToAgent: false
     },
     { 
       icon: '💰', 
       label: 'Smart Investments', 
       description: 'Mutual funds & FDs',
-      gradient: 'from-green-500 to-emerald-600'
+      gradient: 'from-green-500 to-emerald-600',
+      navigateToAgent: false
     },
   ];
 
@@ -51,7 +55,7 @@ export const AIHeroSection: React.FC<AIHeroSectionProps> = ({ userName, onOpenCh
               Hello, {userName.split(' ')[0]}! 👋
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl">
-              Welcome to your financial wellness platform. Explore personalized products, track your goals, and make smarter financial decisions.
+              Open your HDFC Bank account digitally in just 5 minutes with FinAgent! Explore personalized products, track your goals, and make smarter financial decisions.
             </p>
           </div>
         </div>
@@ -60,9 +64,14 @@ export const AIHeroSection: React.FC<AIHeroSectionProps> = ({ userName, onOpenCh
           {quickActions.map((action, idx) => (
             <button
               key={idx}
-              onClick={onOpenChat}
-              className="group bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-left transition-all hover:scale-105 shadow-sm hover:shadow-md"
+              onClick={() => action.navigateToAgent ? onNavigate?.('agent') : onOpenChat()}
+              className="group relative bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-left transition-all hover:scale-105 shadow-sm hover:shadow-md"
             >
+              {idx === 0 && (
+                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+                  ⚡ 5 mins
+                </div>
+              )}
               <div className="text-3xl mb-2">{action.icon}</div>
               <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{action.label}</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">{action.description}</div>
@@ -78,10 +87,10 @@ export const AIHeroSection: React.FC<AIHeroSectionProps> = ({ userName, onOpenCh
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
             </svg>
-            Ask FinAgent
+            Open Account with FinAgent
           </Button>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Get instant answers from your AI financial agent →
+            Or ask any financial question instantly →
           </p>
         </div>
       </div>
