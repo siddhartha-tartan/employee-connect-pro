@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { AIHeroSection } from "./dashboard/AIHeroSection";
-import { FinancialHealthCard } from "./dashboard/FinancialHealthCard";
 import { PreApprovedOffers } from "./dashboard/PreApprovedOffers";
 import { GoalJourneys } from "./dashboard/GoalJourneys";
 import { ProductMarketplace } from "./dashboard/ProductMarketplace";
-import { Sidebar } from "./Sidebar";
+import { AppLayout } from "./AppLayout";
+import { PageTransition } from "./PageTransition";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -24,50 +24,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) =>
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/50 dark:from-gray-900 dark:to-gray-800">
-      {/* Sidebar */}
-      <Sidebar 
-        user={userData} 
-        onLogout={onLogout} 
-        currentPage="dashboard"
-        onNavigate={onNavigate}
-      />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
+    <AppLayout 
+      onLogout={onLogout} 
+      currentPage="dashboard"
+      onNavigate={onNavigate}
+    >
+      <PageTransition pageKey="dashboard">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="space-y-6">
-            {/* AI Hero Section */}
-            <AIHeroSection 
-              userName={userData.name}
-              onOpenChat={() => setChatExpanded(true)}
-              onNavigate={onNavigate}
-            />
+          {/* AI Hero Section */}
+          <AIHeroSection 
+            userName={userData.name}
+            onOpenChat={() => setChatExpanded(true)}
+            onNavigate={onNavigate}
+          />
 
-            {/* Financial Health Score */}
-            <FinancialHealthCard 
-              score={78}
-              salary={userData.salary}
-              tenure={userData.tenure}
-            />
+          {/* Pre-approved Offers */}
+          <section>
+            <PreApprovedOffers />
+          </section>
 
-            {/* Pre-approved Offers */}
-            <section>
-              <PreApprovedOffers />
-            </section>
+          {/* Goal-based Journeys */}
+          <section>
+            <GoalJourneys />
+          </section>
 
-            {/* Goal-based Journeys */}
-            <section>
-              <GoalJourneys />
-            </section>
-
-            {/* Product Marketplace */}
-            <section>
-              <ProductMarketplace />
-            </section>
-          </div>
+          {/* Product Marketplace */}
+          <section>
+            <ProductMarketplace />
+          </section>
         </div>
-      </div>
-    </div>
+        </div>
+      </PageTransition>
+    </AppLayout>
   );
 };

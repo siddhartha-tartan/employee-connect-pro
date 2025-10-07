@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sidebar } from "./Sidebar";
+import { AppLayout } from "./AppLayout";
+import { PageTransition } from "./PageTransition";
+import { Bot, Send } from "lucide-react";
 
 interface AgentProps {
   onLogout: () => void;
@@ -110,6 +112,14 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
         }];
       });
     }
+  };
+
+  // Presentation helpers: strip markdown bold and leading emoji/punctuation for clean display
+  const formatText = (s?: string) => {
+    if (!s) return '';
+    return s
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/^[^A-Za-z0-9]+\s*/, '');
   };
 
 
@@ -669,9 +679,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     setActiveJourney('bank-account');
     setJourneySteps([
       { label: 'Mobile Verification', status: 'pending' },
-      { label: 'PAN & Aadhaar Details', status: 'pending' },
-      { label: 'e-KYC Consent', status: 'pending' },
-      { label: 'Aadhaar OTP Verification', status: 'pending' },
+      { label: 'Aadhaar eKYC', status: 'pending' },
       { label: 'Video KYC Scheduling', status: 'pending' },
       { label: 'Account Setup', status: 'pending' },
       { label: 'Account Activation', status: 'pending' }
@@ -692,7 +700,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
     setMessages(prev => [...prev, {
       type: 'agent',
-      text: `Great! I see your mobile number is **${userData.phone}**. I'll send you a verification code to get started.`,
+      text: `Verifying your mobile number ${userData.phone}. Sending code...`,
       timestamp: Date.now()
     }]);
 
@@ -701,13 +709,8 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     setMessages(prev => [...prev, {
       type: 'info-card',
       data: {
-        icon: '📲',
         title: 'OTP sent to your mobile',
-        subtitle: `A 6-digit code has been sent to ${userData.phone}`,
-        items: [
-          { label: 'Valid for', value: '10 minutes', icon: '⏱️' },
-          { label: 'Didn\'t receive?', value: 'Resend in 30s', icon: '🔄' }
-        ],
+        subtitle: `Enter the 6-digit code sent to ${userData.phone}`,
         input: {
           type: 'otp',
           placeholder: 'Enter 6-digit OTP',
@@ -736,13 +739,13 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
     setMessages(prev => [...prev, {
       type: 'agent',
-      text: '✅ Mobile verified successfully! Now let\'s verify your identity with PAN and Aadhaar.',
+      text: '✅ Mobile verified successfully! Now let\'s complete your identity verification with Aadhaar eKYC.',
       timestamp: Date.now()
     }]);
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Step 2: PAN & Aadhaar Entry
+    // Step 2: Aadhaar eKYC (Combined)
     setJourneySteps(prev => prev.map((step, i) => i === 1 ? {...step, status: 'in-progress'} : step));
 
     await new Promise(resolve => setTimeout(resolve, 400));
@@ -759,7 +762,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
         ]
       },
       actions: [
-        { label: 'Looks Good, Continue', action: 'verify-pan-aadhaar', variant: 'primary' }
+        { label: 'Verify & Start eKYC', action: 'verify-pan-aadhaar', variant: 'primary' }
       ],
       timestamp: Date.now()
     }]);
@@ -772,69 +775,22 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
       timestamp: Date.now()
     }]);
 
-    setJourneySteps(prev => prev.map((step, i) => i === 1 ? {...step, status: 'completed'} : step));
-
     await new Promise(resolve => setTimeout(resolve, 400));
-
-    // Step 3: e-KYC Consent
-    setJourneySteps(prev => prev.map((step, i) => i === 2 ? {...step, status: 'in-progress'} : step));
 
     setIsThinking(true);
     await addThinkingSteps([
       '🔐 Connecting to UIDAI...',
-      '📋 Preparing e-KYC request...'
+      '📋 Initiating Aadhaar eKYC...',
+      '📱 Sending OTP to Aadhaar-linked mobile...'
     ]);
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     setMessages(prev => prev.filter(m => m.type !== 'thinking'));
     setIsThinking(false);
 
     setMessages(prev => [...prev, {
       type: 'agent',
-      text: "To complete your KYC digitally, I need your consent to fetch details from UIDAI's Aadhaar database. This is secure and instant!",
-      timestamp: Date.now()
-    }]);
-
-    await new Promise(resolve => setTimeout(resolve, 600));
-
-    setMessages(prev => [...prev, {
-      type: 'info-card',
-      data: {
-        icon: '🔒',
-        title: 'e-KYC Consent Required',
-        subtitle: 'We\'ll fetch your address and identity from Aadhaar',
-        items: [
-          { label: 'Data Source', value: 'UIDAI (Aadhaar)', icon: '🏛️' },
-          { label: 'Purpose', value: 'Savings Account KYC', icon: '🎯' },
-          { label: 'Bank', value: 'HDFC Bank Ltd', icon: '🏦' },
-          { label: 'Security', value: 'End-to-end encrypted', icon: '🔐' }
-        ]
-      },
-      actions: [
-        { label: 'I Consent, Proceed', action: 'ekyc-consent', variant: 'primary' },
-        { label: 'Learn More', action: 'learn-ekyc', variant: 'ghost' }
-      ],
-      timestamp: Date.now()
-    }]);
-  };
-
-  const handleEKYCConsent = async () => {
-    setMessages(prev => [...prev, {
-      type: 'user',
-      text: 'I consent ✓',
-      timestamp: Date.now()
-    }]);
-
-    setJourneySteps(prev => prev.map((step, i) => i === 2 ? {...step, status: 'completed'} : step));
-
-    await new Promise(resolve => setTimeout(resolve, 400));
-
-    // Step 4: Aadhaar OTP Verification
-    setJourneySteps(prev => prev.map((step, i) => i === 3 ? {...step, status: 'in-progress'} : step));
-
-    setMessages(prev => [...prev, {
-      type: 'agent',
-      text: "Perfect! I'm sending an OTP to your Aadhaar-linked mobile number for final verification.",
+      text: "Perfect! I'm sending an OTP to your Aadhaar-linked mobile number for eKYC verification.",
       timestamp: Date.now()
     }]);
 
@@ -843,13 +799,8 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     setMessages(prev => [...prev, {
       type: 'info-card',
       data: {
-        icon: '📱',
-        title: 'Aadhaar OTP Sent',
-        subtitle: `Code sent to XXXXXX4210 (linked with Aadhaar)`,
-        items: [
-          { label: 'Valid for', value: '10 minutes', icon: '⏱️' },
-          { label: 'Attempts remaining', value: '3', icon: '🔢' }
-        ],
+        title: 'OTP sent to Aadhaar-linked number',
+        subtitle: `Enter the 6-digit code sent to XXXXXX4210`,
         input: {
           type: 'otp',
           placeholder: 'Enter 6-digit OTP',
@@ -863,6 +814,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     }]);
   };
 
+
   const handleVerifyAadhaarOTP = async () => {
     const otpValue = aadhaarOTP || '654321';
     setMessages(prev => [...prev, {
@@ -871,8 +823,6 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
       timestamp: Date.now()
     }]);
     setAadhaarOTP('');
-
-    setJourneySteps(prev => prev.map((step, i) => i === 3 ? {...step, status: 'completed'} : step));
 
     setIsThinking(true);
     await addThinkingSteps([
@@ -885,9 +835,11 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     setMessages(prev => prev.filter(m => m.type !== 'thinking'));
     setIsThinking(false);
 
+    setJourneySteps(prev => prev.map((step, i) => i === 1 ? {...step, status: 'completed'} : step));
+
     setMessages(prev => [...prev, {
       type: 'agent',
-      text: "Excellent! Your e-KYC is complete. Here's what we fetched from Aadhaar:",
+      text: "Excellent! Your Aadhaar eKYC is complete. Here's what we verified:",
       timestamp: Date.now()
     }]);
 
@@ -895,12 +847,13 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
     setMessages(prev => [...prev, {
       type: 'interactive',
-      text: `📍 **Address from Aadhaar**\n${userData.address}`,
+      text: `Address from Aadhaar:\n${userData.address}`,
       data: {
         fields: [
           { label: 'Name', value: userData.name, icon: '👤', verified: true },
           { label: 'Date of Birth', value: userData.dob, icon: '📅', verified: true },
-          { label: 'Address', value: userData.address, icon: '📍', verified: true }
+          { label: 'Address', value: userData.address, icon: '📍', verified: true },
+          { label: 'PAN', value: userData.pan, icon: '🆔', verified: true }
         ]
       },
       timestamp: Date.now()
@@ -908,8 +861,8 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Step 5: Video KYC Scheduling
-    setJourneySteps(prev => prev.map((step, i) => i === 4 ? {...step, status: 'in-progress'} : step));
+    // Step 3: Video KYC Scheduling
+    setJourneySteps(prev => prev.map((step, i) => i === 2 ? {...step, status: 'in-progress'} : step));
 
     setMessages(prev => [...prev, {
       type: 'agent',
@@ -951,7 +904,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
       timestamp: Date.now()
     }]);
 
-    setJourneySteps(prev => prev.map((step, i) => i === 4 ? {...step, status: 'completed'} : step));
+    setJourneySteps(prev => prev.map((step, i) => i === 2 ? {...step, status: 'completed'} : step));
 
     await new Promise(resolve => setTimeout(resolve, 400));
 
@@ -982,30 +935,37 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
     await new Promise(resolve => setTimeout(resolve, 700));
 
-    // Step 6: Account Setup
-    setJourneySteps(prev => prev.map((step, i) => i === 5 ? {...step, status: 'in-progress'} : step));
+    // Step 4: Account Setup Summary
+    setJourneySteps(prev => prev.map((step, i) => i === 3 ? {...step, status: 'in-progress'} : step));
 
     setMessages(prev => [...prev, {
       type: 'agent',
-      text: "Now let's set up your account preferences. Where should I send your debit card?",
+      text: "Great! Let me show you a summary of your account details before we proceed:",
       timestamp: Date.now()
     }]);
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
     setMessages(prev => [...prev, {
-      type: 'interactive',
-      text: `I've pre-filled your address from Aadhaar. You can change it if needed:`,
+      type: 'info-card',
       data: {
-        fields: [
-          { label: 'Delivery Address', value: userData.address, icon: '📍', editable: true },
-          { label: 'UPI ID', value: 'rahul@hdfcbank', icon: '💰', editable: true },
-          { label: 'Account Type', value: 'Savings Account (Regular)', icon: '🏦', verified: true },
-          { label: 'Notifications', value: 'SMS + Email + App', icon: '🔔', verified: true }
+        icon: '📋',
+        title: 'Account Setup Summary',
+        subtitle: 'Please review your information',
+        items: [
+          { label: 'Full Name', value: userData.name, icon: '👤' },
+          { label: 'PAN Number', value: userData.pan, icon: '🆔' },
+          { label: 'Aadhaar', value: userData.aadhaar, icon: '🔐' },
+          { label: 'Date of Birth', value: userData.dob, icon: '📅' },
+          { label: 'Mobile Number', value: userData.phone, icon: '📱' },
+          { label: 'Email', value: userData.email, icon: '📧' },
+          { label: 'Delivery Address', value: userData.address, icon: '📍' },
+          { label: 'Account Type', value: 'Savings Account', icon: '🏦' },
+          { label: 'Video KYC', value: slotLabel, icon: '📹' }
         ]
       },
       actions: [
-        { label: 'Looks Good, Continue', action: 'confirm-preferences', variant: 'primary' }
+        { label: 'Confirm & Create Account', action: 'confirm-preferences', variant: 'primary' }
       ],
       timestamp: Date.now()
     }]);
@@ -1018,12 +978,12 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
       timestamp: Date.now()
     }]);
 
-    setJourneySteps(prev => prev.map((step, i) => i === 5 ? {...step, status: 'completed'} : step));
+    setJourneySteps(prev => prev.map((step, i) => i === 3 ? {...step, status: 'completed'} : step));
 
     await new Promise(resolve => setTimeout(resolve, 400));
 
-    // Step 7: Account Activation
-    setJourneySteps(prev => prev.map((step, i) => i === 6 ? {...step, status: 'in-progress'} : step));
+    // Step 5: Account Activation
+    setJourneySteps(prev => prev.map((step, i) => i === 4 ? {...step, status: 'in-progress'} : step));
 
     setIsThinking(true);
     await addThinkingSteps([
@@ -1038,7 +998,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     setMessages(prev => prev.filter(m => m.type !== 'thinking'));
     setIsThinking(false);
 
-    setJourneySteps(prev => prev.map((step, i) => i === 6 ? {...step, status: 'completed'} : step));
+    setJourneySteps(prev => prev.map((step, i) => i === 4 ? {...step, status: 'completed'} : step));
 
     const accountNumber = '50100' + Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
     const virtualCardNumber = '4532' + Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
@@ -1072,29 +1032,48 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
     setMessages(prev => [...prev, {
       type: 'agent',
-      text: "🎊 Congratulations! Your account is ready. What would you like to do next?",
+      text: "🎊 Congratulations! Your account is ready. Here's what you can do next:",
       timestamp: Date.now()
     }]);
 
     await new Promise(resolve => setTimeout(resolve, 600));
 
+    // Primary Action: Make it Salary Account
     setMessages(prev => [...prev, {
       type: 'info-card',
       data: {
-        icon: '🚀',
-        title: 'Quick Actions',
-        subtitle: 'Get the most out of your new account',
-        items: []
+        icon: '💼',
+        title: 'Upgrade to Salary Account',
+        subtitle: 'Get premium benefits with zero balance requirement',
+        items: [
+          { label: 'Min Balance', value: '₹0 (No MAB)', icon: '💰' },
+          { label: 'Free Transactions', value: 'Unlimited', icon: '🔄' },
+          { label: 'Premium Benefits', value: 'Higher limits & rewards', icon: '⭐' },
+          { label: 'Setup Time', value: 'Instant with HR approval', icon: '⚡' }
+        ]
       },
       actions: [
-        { label: '📧 Email Account Details', action: 'email-details', variant: 'primary' },
-        { label: '💳 Activate Virtual Card', action: 'activate-vcard', variant: 'primary' },
-        { label: '📱 Download Mobile App', action: 'download-app', variant: 'secondary' },
-        { label: '👤 Add Nominee', action: 'add-nominee', variant: 'secondary' }
+        { label: '💼 Request HR to Make This Salary Account', action: 'request-salary-account', variant: 'primary' }
       ],
       timestamp: Date.now()
     }]);
 
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    // Pre-approved Credit Card Offers
+    setMessages(prev => [...prev, {
+      type: 'info-card',
+      data: {
+        icon: '💳',
+        title: 'Pre-Approved Credit Card Offers',
+        subtitle: 'Exclusive offers for new account holders',
+        items: []
+      },
+      actions: [
+        { label: '💳 View Credit Card Offers', action: 'view-credit-offers', variant: 'primary' }
+      ],
+      timestamp: Date.now()
+    }]);
     setActiveJourney(null);
     // Keep journey steps visible to show completed progress
   };
@@ -1120,7 +1099,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
     setMessages(prev => [...prev, {
       type: 'agent',
-      text: `✅ Account details sent to **${userData.email}**\n\nCheck your inbox for complete account information, virtual card details, and next steps guide.`,
+      text: `Account details sent to ${userData.email}.`,
       timestamp: Date.now()
     }]);
   };
@@ -1182,13 +1161,8 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     setMessages(prev => [...prev, {
       type: 'info-card',
       data: {
-        icon: '🔐',
-        title: 'Card Activation OTP',
-        subtitle: `OTP sent to ${userData.phone}`,
-        items: [
-          { label: 'Valid for', value: '5 minutes', icon: '⏱️' },
-          { label: 'Purpose', value: 'Virtual card activation', icon: '💳' }
-        ],
+        title: 'Card activation OTP',
+        subtitle: `Enter the 6-digit code sent to ${userData.phone}`,
         input: {
           type: 'otp',
           placeholder: 'Enter 6-digit OTP',
@@ -1289,6 +1263,207 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
         { label: '📱 View Full Card Details', action: 'view-card-app', variant: 'primary' },
         { label: '⚙️ Manage Card Settings', action: 'manage-card', variant: 'secondary' }
       ],
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleRequestSalaryAccount = async () => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: 'Request HR to make this salary account 💼',
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    setIsThinking(true);
+    await addThinkingSteps([
+      '📧 Sending request to HR department...',
+      '✅ Request submitted successfully'
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
+    setIsThinking(false);
+
+    setMessages(prev => [...prev, {
+      type: 'success',
+      data: {
+        title: '✅ Salary Account Request Sent',
+        applicationNumber: 'SAL' + Date.now().toString().slice(-8),
+        details: [
+          `Request sent to: ${userData.company} HR`,
+          'Status: Pending approval',
+          'Expected time: 24-48 hours',
+          'Notification: Via email & SMS'
+        ],
+        nextSteps: [
+          'HR will review your request',
+          'Approval notification via email',
+          'Account upgraded automatically',
+          'Benefits active immediately'
+        ]
+      },
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "Great! I've sent the request to your HR department. Once approved, your account will be upgraded to a salary account with premium benefits including zero balance requirement and unlimited free transactions.",
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleViewCreditOffers = async () => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: 'View credit card offers 💳',
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    setIsThinking(true);
+    await addThinkingSteps([
+      '💳 Fetching pre-approved offers...',
+      '📊 Analyzing your profile...',
+      '✨ Offers ready!'
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
+    setIsThinking(false);
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "Excellent! Based on your profile, you're pre-approved for these premium credit cards:",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    setMessages(prev => [...prev, {
+      type: 'journey-step',
+      data: {
+        title: 'Pre-Approved Credit Cards',
+        highlight: 'Special offers for new customers',
+        cardOptions: [
+          {
+            name: 'HDFC Millennia Credit Card',
+            limit: '₹5L limit',
+            fee: '₹1,000/year (1st year free)',
+            benefits: [
+              '5% cashback on Amazon, Flipkart',
+              '2.5% cashback on all other spends',
+              '1000 reward points on joining',
+              'Fuel surcharge waiver',
+              'Complimentary airport lounge access (4/year)'
+            ]
+          },
+          {
+            name: 'HDFC Regalia Credit Card',
+            limit: '₹8L limit',
+            fee: '₹2,500/year (waived on ₹3L spends)',
+            benefits: [
+              '4 reward points per ₹150 spent',
+              'Unlimited domestic lounge access',
+              'International lounge access (6/year)',
+              'Complimentary movie tickets (2/month)',
+              '₹5,000 welcome voucher'
+            ]
+          },
+          {
+            name: 'HDFC Infinia Credit Card',
+            limit: '₹10L limit',
+            fee: '₹10,000/year (Super premium)',
+            benefits: [
+              '10X rewards on travel & dining',
+              'Unlimited lounge access worldwide',
+              'Concierge service 24/7',
+              'Golf privileges at 250+ courses',
+              '₹10,000 Taj voucher on joining'
+            ]
+          }
+        ],
+        action: 'select-credit-card-offer'
+      },
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleSelectCreditCardOffer = async (cardName: string) => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: `Apply for ${cardName}`,
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "Perfect choice! Since you're a new account holder, your application will be fast-tracked. Let me verify your details:",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    setMessages(prev => [...prev, {
+      type: 'confirmation',
+      data: {
+        title: 'Confirm Application Details',
+        fields: [
+          { label: 'Full Name', value: userData.name, verified: true },
+          { label: 'PAN Number', value: userData.pan, verified: true },
+          { label: 'Annual Income', value: `₹${(userData.salary / 100000).toFixed(1)}L`, verified: true },
+          { label: 'Employment', value: userData.company, verified: true },
+          { label: 'Email', value: userData.email, verified: true },
+          { label: 'Mobile', value: userData.phone, verified: true },
+        ],
+        action: 'confirm-credit-card-application'
+      },
+      timestamp: Date.now()
+    }]);
+  };
+
+  const handleConfirmCreditCardApplication = async () => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: 'Application details confirmed ✓',
+      timestamp: Date.now()
+    }]);
+
+    setIsThinking(true);
+    await addThinkingSteps([
+      '💳 Processing credit card application...',
+      '✅ Credit check completed',
+      '📋 Application submitted'
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
+    setIsThinking(false);
+
+    setMessages(prev => [...prev, {
+      type: 'success',
+      data: {
+        title: '🎉 Credit Card Application Submitted!',
+        applicationNumber: 'CC' + Date.now().toString().slice(-8),
+        details: [
+          'Status: Pre-approved - Under final review',
+          'Expected approval: 2-3 business days',
+          'Card delivery: 5-7 days post approval',
+          'Virtual card on approval'
+        ],
+        nextSteps: [
+          'Instant approval notification via SMS',
+          'Virtual card available immediately',
+          'Physical card delivered to registered address',
+          'Activate via mobile app or SMS'
+        ]
+      },
       timestamp: Date.now()
     }]);
   };
@@ -1395,17 +1570,13 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar */}
-      <Sidebar 
-        user={userData} 
-        onLogout={onLogout} 
-        currentPage="agent"
-        onNavigate={onNavigate}
-      />
-
-      {/* Main Content */}
-      <div className="flex-1">
+    <AppLayout 
+      onLogout={onLogout} 
+      currentPage="agent"
+      onNavigate={onNavigate}
+    >
+      <PageTransition pageKey="agent">
+        <div className="flex-1 h-[calc(100vh-4rem)]">
           <div className="max-w-[1800px] mx-auto h-full flex gap-4 p-4">
             {/* Main Chat Area */}
             <div className="flex-1 flex">
@@ -1417,11 +1588,13 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center max-w-2xl px-6">
                       <div className="relative inline-block mb-6">
-                        <div className="text-5xl">🤖</div>
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Bot className="w-6 h-6 text-primary" />
+                        </div>
                         <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                       </div>
                       <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        Hi {userData.name.split(' ')[0]}! 👋
+                        Hi {userData.name.split(' ')[0]}
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
                         Your AI financial assistant for banking & investments
@@ -1468,7 +1641,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                 <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                                 <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                               </div>
-                              <span className="text-xs font-medium text-primary">{msg.steps[msg.steps.length - 1]}</span>
+                              <span className="text-xs font-medium text-primary">{formatText(msg.steps[msg.steps.length - 1])}</span>
                             </div>
                           </div>
                         )}
@@ -1478,9 +1651,9 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                             <div className="max-w-[80%] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
                               <div className="flex items-start space-x-3">
                                 <div className="w-7 h-7 bg-gradient-to-br from-[hsl(var(--primary))] to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <span className="text-base">🤖</span>
+                                  <Bot className="w-4 h-4 text-white" />
                                 </div>
-                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-line pt-0.5">{msg.text}</p>
+                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-line pt-0.5">{formatText(msg.text)}</p>
                               </div>
                             </div>
                           </div>
@@ -1492,7 +1665,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-tl-md shadow-sm overflow-hidden">
                                 {msg.text && (
                                   <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{msg.text}</p>
+                                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{formatText(msg.text)}</p>
                                   </div>
                                 )}
                                 {msg.data?.fields && (
@@ -1524,7 +1697,6 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                         onClick={() => {
                                           if (action.action === 'verify-mobile-otp') handleVerifyMobileOTP();
                                           else if (action.action === 'verify-pan-aadhaar') handleVerifyPanAadhaar();
-                                          else if (action.action === 'ekyc-consent') handleEKYCConsent();
                                           else if (action.action === 'verify-aadhaar-otp') handleVerifyAadhaarOTP();
                                           else if (action.action === 'confirm-preferences') handleConfirmPreferences();
                                           else if (action.action === 'verify-card-details') handleVerifyCardDetails();
@@ -1547,10 +1719,9 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                         {msg.type === 'info-card' && (
                           <div className="flex justify-start">
                             <div className="max-w-[85%] w-full">
-                              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl rounded-tl-md shadow-sm overflow-hidden">
+                              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-tl-md shadow-sm overflow-hidden">
                                 <div className="p-4">
                                   <div className="flex items-start space-x-3 mb-3">
-                                    <div className="text-3xl">{msg.data?.icon}</div>
                                     <div className="flex-1">
                                       <h4 className="font-semibold text-sm text-gray-900 dark:text-white">{msg.data?.title}</h4>
                                       {msg.data?.subtitle && (
@@ -1561,11 +1732,8 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                   {msg.data?.items && msg.data.items.length > 0 && (
                                     <div className="space-y-2 mb-3">
                                       {msg.data.items.map((item: any, i: number) => (
-                                        <div key={i} className="flex items-center justify-between text-xs bg-white/50 dark:bg-gray-800/50 rounded-lg p-2">
-                                          <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                                            {item.icon && <span>{item.icon}</span>}
-                                            {item.label}
-                                          </span>
+                                        <div key={i} className="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
+                                          <span className="text-gray-600 dark:text-gray-400">{item.label}</span>
                                           <span className="font-medium text-gray-900 dark:text-white">{item.value}</span>
                                         </div>
                                       ))}
@@ -1591,6 +1759,17 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                             if (/^\d{0,6}$/.test(value)) setCardActivationOTP(value);
                                           }
                                         }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            if (msg.data.input.id === 'mobile-otp') {
+                                              handleVerifyMobileOTP();
+                                            } else if (msg.data.input.id === 'aadhaar-otp') {
+                                              handleVerifyAadhaarOTP();
+                                            } else if (msg.data.input.id === 'card-activation-otp') {
+                                              handleVerifyCardOTP();
+                                            }
+                                          }
+                                        }}
                                         maxLength={msg.data.input.maxLength || (msg.data.input.type === 'otp' ? 6 : undefined)}
                                         className="text-center text-lg tracking-widest font-mono"
                                         autoFocus
@@ -1605,16 +1784,18 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                         key={i}
                                         onClick={() => {
                                           if (action.action === 'verify-mobile-otp') handleVerifyMobileOTP();
-                                          else if (action.action === 'ekyc-consent') handleEKYCConsent();
                                           else if (action.action === 'verify-aadhaar-otp') handleVerifyAadhaarOTP();
                                           else if (action.action === 'schedule-vkyc-slot1') handleScheduleVKYC('schedule-vkyc-slot1');
                                           else if (action.action === 'schedule-vkyc-slot2') handleScheduleVKYC('schedule-vkyc-slot2');
                                           else if (action.action === 'schedule-vkyc-later') handleScheduleVKYC('schedule-vkyc-later');
+                                          else if (action.action === 'confirm-preferences') handleConfirmPreferences();
                                           else if (action.action === 'email-details') handleEmailAccountDetails();
                                           else if (action.action === 'activate-vcard') handleActivateVirtualCard();
                                           else if (action.action === 'verify-card-details') handleVerifyCardDetails();
                                           else if (action.action === 'verify-card-otp') handleVerifyCardOTP();
                                           else if (action.action === 'finalize-card-activation') handleFinalizeCardActivation();
+                                          else if (action.action === 'request-salary-account') handleRequestSalaryAccount();
+                                          else if (action.action === 'view-credit-offers') handleViewCreditOffers();
                                         }}
                                         variant={action.variant === 'ghost' ? 'outline' : action.variant === 'secondary' ? 'secondary' : 'default'}
                                         className="flex-1 text-sm h-9"
@@ -1670,12 +1851,12 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                         handleConfirmHealth();
                                       } else if (msg.data.action === 'confirm-card-details') {
                                         handleConfirmCardDetails();
+                                      } else if (msg.data.action === 'confirm-credit-card-application') {
+                                        handleConfirmCreditCardApplication();
                                       } else if (msg.data.action === 'verify-mobile-otp') {
                                         handleVerifyMobileOTP();
                                       } else if (msg.data.action === 'verify-pan-aadhaar') {
                                         handleVerifyPanAadhaar();
-                                      } else if (msg.data.action === 'ekyc-consent') {
-                                        handleEKYCConsent();
                                       } else if (msg.data.action === 'verify-aadhaar-otp') {
                                         handleVerifyAadhaarOTP();
                                       } else if (msg.data.action === 'confirm-preferences') {
@@ -1749,7 +1930,13 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                       {msg.data.cardOptions.map((card: any, i: number) => (
                                         <button
                                           key={i}
-                                          onClick={() => handleSelectCard(card.name)}
+                                          onClick={() => {
+                                            if (msg.data.action === 'select-credit-card-offer') {
+                                              handleSelectCreditCardOffer(card.name);
+                                            } else {
+                                              handleSelectCard(card.name);
+                                            }
+                                          }}
                                           className="w-full text-left p-4 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-750 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl transition-all hover:shadow-lg group"
                                         >
                                           <div className="flex items-start justify-between mb-3">
@@ -1911,7 +2098,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                       </svg>
                                     </div>
                                     <div className="flex-1">
-                                      <h4 className="font-semibold text-base text-white">{msg.data.title}</h4>
+                                      <h4 className="font-semibold text-base text-white">{formatText(msg.data.title)}</h4>
                                       {msg.data.applicationNumber && (
                                         <p className="text-xs text-white/90 mt-0.5">
                                           Ref: <span className="font-mono font-semibold">{msg.data.applicationNumber}</span>
@@ -1958,11 +2145,17 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
               {/* Input Area */}
               <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+                {/* Quick Replies removed per UX preference; inline actions remain in messages */}
                 <div className="flex items-center space-x-2">
                   <Input
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
                     placeholder="Ask me anything..."
                     className="flex-1 text-sm h-10"
                     disabled={isThinking}
@@ -1976,9 +2169,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                     {isThinking ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     ) : (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
+                      <Send className="w-4 h-4" />
                     )}
                   </Button>
                 </div>
@@ -2090,54 +2281,55 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
             </div>
           )}
         </div>
+
+        <style>{`
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateX(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+
+          @keyframes scaleIn {
+            from {
+              opacity: 0;
+              transform: scale(0.95);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+
+          .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out;
+          }
+
+          .animate-slideIn {
+            animation: slideIn 0.3s ease-out;
+          }
+
+          .animate-scaleIn {
+            animation: scaleIn 0.4s ease-out;
+          }
+        `}</style>
       </div>
-
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes scaleIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .animate-slideIn {
-          animation: slideIn 0.3s ease-out;
-        }
-
-        .animate-scaleIn {
-          animation: scaleIn 0.4s ease-out;
-        }
-      `}</style>
-    </div>
+      </PageTransition>
+    </AppLayout>
   );
 };

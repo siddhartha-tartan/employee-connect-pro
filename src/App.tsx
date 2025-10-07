@@ -6,76 +6,52 @@ import { HR } from "./components/HR";
 import { CRM } from "./components/CRM";
 import { Agent } from "./components/Agent";
 import { Links } from "./components/Links";
+import { RoleProvider, useRole } from "./contexts/RoleContext";
 
-export function App() {
+function AppContent() {
+  const { currentRole } = useRole();
+  
   // Persist authentication in localStorage
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('isAuthenticated') === 'true';
   });
   
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'orders' | 'agent' | 'hr' | 'crm' | 'links'>(() => {
+  const [currentPage, setCurrentPage] = useState<string>(() => {
     const hash = window.location.hash.slice(1);
-    if (hash === 'hr') return 'hr';
-    if (hash === 'crm') return 'crm';
-    if (hash === 'links' || hash === 'link') return 'links';
-    if (hash === 'orders') return 'orders';
-    if (hash === 'agent') return 'agent';
-    if (hash === 'dashboard') return 'dashboard';
-    // Only read from localStorage for employee pages (dashboard/orders/agent), never 'hr', 'crm', or 'links'
-    const savedPage = localStorage.getItem('currentPage') as 'dashboard' | 'orders' | 'agent' | 'hr' | 'crm' | 'links';
-    return (savedPage === 'dashboard' || savedPage === 'orders' || savedPage === 'agent') ? savedPage : 'dashboard';
+    // Map hash to appropriate page based on role
+    if (hash && !['hr', 'crm', 'links', 'link'].includes(hash)) {
+      return hash;
+    }
+    // Get default page based on role
+    if (currentRole === 'hr') return 'overview';
+    if (currentRole === 'crm') return 'dashboard';
+    // Employee role default
+    const savedPage = localStorage.getItem('currentPage');
+    return savedPage || 'dashboard';
   });
 
-  // Handle hash changes for navigation
+  // Update page when role changes
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.slice(1);
-      if (hash === 'hr') {
-        setCurrentPage('hr');
-        // Auto-authenticate for HR portal (separate role in real app)
-        setIsAuthenticated(true);
-        localStorage.setItem('isAuthenticated', 'true');
-      } else if (hash === 'crm') {
-        setCurrentPage('crm');
-        // Auto-authenticate for CRM portal (separate role in real app)
-        setIsAuthenticated(true);
-        localStorage.setItem('isAuthenticated', 'true');
-      } else if (hash === 'links' || hash === 'link') {
-        setCurrentPage('links');
-      } else if (hash === 'orders') {
-        setCurrentPage('orders');
-      } else if (hash === 'agent') {
-        setCurrentPage('agent');
-      } else if (hash === 'dashboard' || hash === '') {
-        setCurrentPage('dashboard');
-      }
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    
-    // Check hash on initial load
-    const initialHash = window.location.hash.slice(1);
-    if (initialHash === 'hr') {
-      setCurrentPage('hr');
+    if (currentRole === 'hr') {
+      setCurrentPage('overview');
       setIsAuthenticated(true);
       localStorage.setItem('isAuthenticated', 'true');
-    } else if (initialHash === 'crm') {
-      setCurrentPage('crm');
+    } else if (currentRole === 'crm') {
+      setCurrentPage('dashboard');
       setIsAuthenticated(true);
       localStorage.setItem('isAuthenticated', 'true');
-    } else if (initialHash === 'links' || initialHash === 'link') {
-      setCurrentPage('links');
+    } else if (currentRole === 'employee') {
+      const savedPage = localStorage.getItem('currentPage');
+      setCurrentPage(savedPage || 'dashboard');
     }
+  }, [currentRole]);
 
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  // Persist currentPage (but not 'hr', 'crm', or 'links' - they're always accessed via their hash)
+  // Persist currentPage for employee role
   useEffect(() => {
-    if (currentPage !== 'hr' && currentPage !== 'crm' && currentPage !== 'links') {
+    if (currentRole === 'employee') {
       localStorage.setItem('currentPage', currentPage);
     }
-  }, [currentPage]);
+  }, [currentPage, currentRole]);
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -87,35 +63,30 @@ export function App() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem('isAuthenticated');
-    setCurrentPage('dashboard');
-    window.location.hash = '';
+    if (currentRole === 'employee') {
+      setCurrentPage('dashboard');
+    }
   };
 
-  const handleNavigate = (page: 'dashboard' | 'orders' | 'agent') => {
+  const handleNavigate = (page: string) => {
     setCurrentPage(page);
-    window.location.hash = page;
   };
-
-  // Links page - accessible via #links or #link (public navigation page)
-  if (currentPage === 'links') {
-    return <Links />;
-  }
-
-  // HR Portal - accessible via #hr (separate role-based interface)
-  if (currentPage === 'hr') {
-    return <HR />;
-  }
-
-  // CRM Portal - accessible via #crm (separate role-based interface for Relationship Managers)
-  if (currentPage === 'crm') {
-    return <CRM />;
-  }
 
   // Employee Interface - requires login
-  if (!isAuthenticated) {
+  if (currentRole === 'employee' && !isAuthenticated) {
     return <Login onLogin={handleLogin} />;
   }
 
+  // Render based on current role
+  if (currentRole === 'hr') {
+    return <HR onLogout={handleLogout} />;
+  }
+
+  if (currentRole === 'crm') {
+    return <CRM onLogout={handleLogout} />;
+  }
+
+  // Employee role pages
   if (currentPage === 'dashboard') {
     return <Dashboard onLogout={handleLogout} onNavigate={handleNavigate} />;
   } else if (currentPage === 'orders') {
@@ -125,6 +96,14 @@ export function App() {
   }
 
   return <Dashboard onLogout={handleLogout} onNavigate={handleNavigate} />;
+}
+
+export function App() {
+  return (
+    <RoleProvider>
+      <AppContent />
+    </RoleProvider>
+  );
 }
 
 

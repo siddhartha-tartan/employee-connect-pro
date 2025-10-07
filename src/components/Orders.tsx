@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Sidebar } from "./Sidebar";
+import { AppLayout } from "./AppLayout";
+import { PageTransition } from "./PageTransition";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,14 +12,6 @@ interface OrdersProps {
 
 export const Orders: React.FC<OrdersProps> = ({ onLogout, onNavigate }) => {
   const [activeTab, setActiveTab] = useState<'active' | 'applications'>('active');
-
-  const userData = {
-    name: "Rahul Sharma",
-    company: "Tech Corp India",
-    employeeId: "EMP12345",
-    salary: 850000,
-    tenure: 3.5,
-  };
 
   // Active products user has
   const activeProducts = [
@@ -122,17 +115,12 @@ export const Orders: React.FC<OrdersProps> = ({ onLogout, onNavigate }) => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/50 dark:from-gray-900 dark:to-gray-800">
-      {/* Sidebar */}
-      <Sidebar 
-        user={userData} 
-        onLogout={onLogout} 
-        currentPage="orders"
-        onNavigate={onNavigate}
-      />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
+    <AppLayout 
+      onLogout={onLogout} 
+      currentPage="orders"
+      onNavigate={onNavigate}
+    >
+      <PageTransition pageKey="orders">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
@@ -332,7 +320,7 @@ export const Orders: React.FC<OrdersProps> = ({ onLogout, onNavigate }) => {
           </div>
         )}
         </div>
-      </div>
-    </div>
+      </PageTransition>
+    </AppLayout>
   );
 };

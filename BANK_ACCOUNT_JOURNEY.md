@@ -189,13 +189,41 @@
 ## 🔄 Flow Summary
 
 ```
-Start → Mobile OTP → PAN/Aadhaar → e-KYC Consent → Aadhaar OTP 
-→ View e-KYC Data → Schedule Video KYC → Set Preferences 
-→ Set MPIN → Account Created! → Quick Actions 
-(Email Details / Activate Card / Add Nominee / Download App)
+Start → Mobile OTP → Aadhaar eKYC (PAN + Aadhaar OTP + Verification) 
+→ Schedule Video KYC → Account Setup Summary → Account Created! 
+→ Primary Action: Make Salary Account → Pre-Approved Credit Cards 
+→ Quick Actions (Email Details / Activate Card / Add Nominee)
 ```
 
-Total Steps: 7 main steps
-Total Time: ~3-4 minutes (simulated)
-User Actions: 8 button clicks
+Total Steps: 5 main steps (Optimized from 7)
+Total Time: ~2-3 minutes (simulated)
+User Actions: 5 button clicks (Reduced from 8)
+
+## ✨ Recent Improvements
+
+### 1. **Optimized Aadhaar Verification & eKYC**
+- Merged PAN/Aadhaar details, e-KYC consent, and Aadhaar OTP into a single streamlined step
+- Reduced user confusion by eliminating multiple consent screens
+- Faster verification process with better UX
+
+### 2. **Removed UPI ID from Setup Flow**
+- UPI ID is now auto-generated and displayed at account activation
+- No need for user input during setup
+- Cleaner account setup experience
+
+### 3. **Account Setup Summary**
+- Consolidated summary page showing all verified information
+- One-click confirmation instead of individual field edits
+- Clear overview before final account creation
+
+### 4. **Salary Account Conversion (Primary CTA)**
+- Prominent action after account creation to convert to salary account
+- Sends request directly to HR department
+- Shows benefits: Zero balance, unlimited transactions, premium benefits
+
+### 5. **Pre-Approved Credit Card Offers**
+- Exclusive credit card offers displayed post-account creation
+- Three tiers: Millennia, Regalia, and Infinia cards
+- Fast-track application with pre-filled details
+- One-click application process
 
