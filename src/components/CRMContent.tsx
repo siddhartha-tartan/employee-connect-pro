@@ -16,7 +16,7 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
   const [analyticsQuery, setAnalyticsQuery] = useState("");
   const [analyticsResult, setAnalyticsResult] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [corporatesView, setCorporatesView] = useState<'grid' | 'list'>('grid');
+  const [corporatesView, setCorporatesView] = useState<'grid' | 'list'>('list');
   const [employeeFilters, setEmployeeFilters] = useState({
     search: '',
     corporate: '',
@@ -24,6 +24,13 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
     minSalary: '',
     maxSalary: '',
   });
+  const [corporateFilters, setCorporateFilters] = useState({
+    search: '',
+    industry: '',
+    location: '',
+  });
+  const [corporateDetailTab, setCorporateDetailTab] = useState<'employees' | 'products'>('employees');
+  const [activatedProductsByCorp, setActivatedProductsByCorp] = useState<Record<string, Set<string>>>({});
 
   // Mock Data
   const corporates = [
@@ -110,7 +117,18 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
     },
   };
 
-  const rules = [
+  const [productRules, setProductRules] = useState<Array<{
+    id: string;
+    name: string;
+    type: string;
+    tier: string;
+    icon: string;
+    gradient: string;
+    eligible: number;
+    approvalRate: number;
+    criteria: string[];
+    benefits: string[];
+  }>>([
     { id: 'R1', name: 'Platinum Credit Card', type: 'Credit Card', tier: 'Platinum', icon: '💳', gradient: 'from-purple-500 to-blue-600', eligible: 234, approvalRate: 89, 
       criteria: ['Salary ≥ ₹8L', 'Credit Score ≥ 750', 'Tenure ≥ 2 years'], 
       benefits: ['5% cashback', 'Lounge access', 'Zero forex'] },
@@ -123,7 +141,11 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
     { id: 'R4', name: 'Home Loan', type: 'Loan', tier: 'Premium', icon: '🏠', gradient: 'from-blue-500 to-cyan-500', eligible: 156, approvalRate: 78,
       criteria: ['Salary ≥ ₹10L', 'Credit Score ≥ 750', 'Tenure ≥ 2 years', 'Age ≤ 55'],
       benefits: ['Up to ₹2Cr', '8.5% interest', 'Zero processing fee'] },
-  ];
+  ]);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [newProductForm, setNewProductForm] = useState({ name: '', type: 'Credit Card', tier: 'Standard', criteria: '', benefits: '' });
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ criteria: string[]; benefits: string[] }>({ criteria: [], benefits: [] });
 
   const handleAnalyticsQuery = async () => {
     setIsAnalyzing(true);
@@ -221,6 +243,17 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
 
   const selectedEmp = allEmployees.find(e => e.id === selectedEmployee);
   const empDetails = selectedEmployee ? employeeDetails[selectedEmployee] : null;
+  const industries = Array.from(new Set(corporates.map(c => c.industry))).sort();
+  const locations = Array.from(new Set(corporates.map(c => c.location))).sort();
+  const filteredCorporates = corporates.filter((c) => {
+    const matchesSearch = !corporateFilters.search ||
+      c.name.toLowerCase().includes(corporateFilters.search.toLowerCase()) ||
+      c.id.toLowerCase().includes(corporateFilters.search.toLowerCase());
+    const matchesIndustry = !corporateFilters.industry || c.industry === corporateFilters.industry;
+    const matchesLocation = !corporateFilters.location || c.location === corporateFilters.location;
+    return matchesSearch && matchesIndustry && matchesLocation;
+  });
+  const currentCorp = corporates.find(c => c.id === selectedCorporate);
 
   return (
     <PageTransition pageKey={activeTab}>
@@ -294,7 +327,7 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
             </div>
           </div>
 
-          {/* View Toggle Section */}
+          {/* Filters + View Toggle Section */}
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">All Corporates</h3>
             <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
@@ -325,10 +358,61 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
             </div>
           </div>
 
+          {/* Filters */}
+          <Card className="p-4 mb-2">
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">Search</label>
+                <Input
+                  placeholder="Company name or ID..."
+                  value={corporateFilters.search}
+                  onChange={(e) => setCorporateFilters({ ...corporateFilters, search: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">Industry</label>
+                <select
+                  value={corporateFilters.industry}
+                  onChange={(e) => setCorporateFilters({ ...corporateFilters, industry: e.target.value })}
+                  className="w-full h-9 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="">All Industries</option>
+                  {industries.map(ind => (
+                    <option key={ind} value={ind}>{ind}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">Location</label>
+                <select
+                  value={corporateFilters.location}
+                  onChange={(e) => setCorporateFilters({ ...corporateFilters, location: e.target.value })}
+                  className="w-full h-9 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="">All Locations</option>
+                  {locations.map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end">
+                {(corporateFilters.search || corporateFilters.industry || corporateFilters.location) && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => setCorporateFilters({ search: '', industry: '', location: '' })}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+            </div>
+          </Card>
+
           {/* Grid View */}
           {corporatesView === 'grid' && (
             <div className="grid md:grid-cols-2 gap-4">
-            {corporates.map((corp) => (
+            {filteredCorporates.map((corp) => (
               <Card key={corp.id} className="p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -369,11 +453,12 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
                   className="w-full"
                   variant="outline"
                   onClick={() => {
-                    setEmployeeFilters({ ...employeeFilters, corporate: corp.id });
-                    onTabChange('employees');
+                    setSelectedCorporate(corp.id);
+                    setCorporateDetailTab('employees');
+                    onTabChange('corporate');
                   }}
                 >
-                  View {allEmployees.filter(e => e.corpId === corp.id).length} Employees
+                  Open Corporate
                   <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
@@ -383,7 +468,8 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
             </div>
           )}
 
-          {/* List View */}
+          {/* List View */
+          }
           {corporatesView === 'list' && (
             <Card className="overflow-hidden">
               <div className="overflow-x-auto">
@@ -401,7 +487,7 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {corporates.map((corp) => (
+                    {filteredCorporates.map((corp) => (
                       <tr key={corp.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -438,11 +524,12 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
                             size="sm" 
                             variant="outline"
                             onClick={() => {
-                              setEmployeeFilters({ ...employeeFilters, corporate: corp.id });
-                              onTabChange('employees');
+                              setSelectedCorporate(corp.id);
+                              setCorporateDetailTab('employees');
+                              onTabChange('corporate');
                             }}
                           >
-                            View Employees
+                            Open
                           </Button>
                         </td>
                       </tr>
@@ -630,15 +717,294 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
         </div>
       )}
 
-      {activeTab === 'rules' && (
+      {/* Corporate Detail Tab */}
+      {activeTab === 'corporate' && selectedCorporate && (
         <div className="space-y-6">
+          <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Product Eligibility Rules</h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">{rules.length} active rules defining product access</p>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{currentCorp?.name}</h2>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">{currentCorp?.industry} • {currentCorp?.location} • Since {currentCorp?.since}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => { onTabChange('corporates'); setSelectedCorporate(null); }}>Back to Corporates</Button>
+            </div>
           </div>
 
+          {/* Subtabs */}
+          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 w-fit">
+            <button
+              onClick={() => setCorporateDetailTab('employees')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                corporateDetailTab === 'employees'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Employees
+            </button>
+            <button
+              onClick={() => setCorporateDetailTab('products')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                corporateDetailTab === 'products'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Products
+            </button>
+          </div>
+
+          {/* Employees list for corporate */}
+          {corporateDetailTab === 'employees' && (
+            <Card className="overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Employee</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Department</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Salary</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tenure</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Credit Score</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Products</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Last Active</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {allEmployees
+                      .filter(emp => emp.corpId === selectedCorporate)
+                      .map((emp) => (
+                        <tr key={emp.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                                {emp.name.split(' ').map(n => n[0]).join('')}
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">{emp.name}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">{emp.designation}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="px-2 py-1 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-200 rounded-full">
+                              {emp.department}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
+                            ₹{(emp.salary / 100000).toFixed(1)}L
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {emp.tenure} yrs
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <span className="text-sm font-semibold text-gray-900 dark:text-white mr-2">{emp.creditScore}</span>
+                              <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div 
+                                  className={`h-2 rounded-full ${
+                                    emp.creditScore >= 80 ? 'bg-green-600' : 
+                                    emp.creditScore >= 70 ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`} 
+                                  style={{ width: `${(emp.creditScore / 100) * 100}%` }} 
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="px-2 py-1 text-xs font-bold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-full">
+                              {emp.products}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            {emp.lastActive}
+                          </td>
+                        </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+
+          {/* Products for corporate */}
+          {corporateDetailTab === 'products' && (
           <div className="space-y-4">
-            {rules.map((rule) => (
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Products</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">Manage activated products and eligibility criteria</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {productRules.map((rule) => {
+                  const activeSet = activatedProductsByCorp[selectedCorporate] || new Set<string>();
+                  const isActive = activeSet.has(rule.id);
+                  return (
+                    <Card key={rule.id} className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="text-3xl">{rule.icon}</div>
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{rule.name}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{rule.type} • {rule.tier} Tier</p>
+                          </div>
+                        </div>
+                        <label className="inline-flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={isActive}
+                            onChange={() => {
+                              const current = activatedProductsByCorp[selectedCorporate] || new Set<string>();
+                              const next = new Set(current);
+                              if (next.has(rule.id)) next.delete(rule.id); else next.add(rule.id);
+                              setActivatedProductsByCorp({ ...activatedProductsByCorp, [selectedCorporate]: next });
+                            }}
+                          />
+                          <span>{isActive ? 'Activated' : 'Inactive'}</span>
+                        </label>
+                      </div>
+
+                      <div className="grid md:grid-cols-3 gap-6">
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Eligibility Requirements</h4>
+                          <div className="space-y-2">
+                            {rule.criteria.map((c, idx) => (
+                              <div key={idx} className="text-sm text-gray-700 dark:text-gray-300 flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span>{c}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Product Benefits</h4>
+                          <div className="space-y-2">
+                            {rule.benefits.map((b, idx) => (
+                              <div key={idx} className="text-sm text-gray-700 dark:text-gray-300 flex items-start">
+                                <span className="text-green-600 mr-2">✓</span>
+                                <span>{b}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Actions</h4>
+                          <div className="space-x-2">
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onTabChange('products')}
+                            >
+                              Edit Eligibility
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'products' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Products</h2>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">{productRules.length} products with eligibility criteria</p>
+            </div>
+            <Button onClick={() => setIsAddingProduct((v) => !v)}>{isAddingProduct ? 'Close' : 'Add Product'}</Button>
+          </div>
+
+          {isAddingProduct && (
+            <Card className="p-6">
+              <div className="grid md:grid-cols-4 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">Name</label>
+                  <Input value={newProductForm.name} onChange={(e) => setNewProductForm({ ...newProductForm, name: e.target.value })} placeholder="e.g., Platinum Credit Card" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">Type</label>
+                  <select
+                    value={newProductForm.type}
+                    onChange={(e) => setNewProductForm({ ...newProductForm, type: e.target.value })}
+                    className="w-full h-9 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    <option>Credit Card</option>
+                    <option>Loan</option>
+                    <option>Insurance</option>
+                    <option>Investment</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">Tier</label>
+                  <select
+                    value={newProductForm.tier}
+                    onChange={(e) => setNewProductForm({ ...newProductForm, tier: e.target.value })}
+                    className="w-full h-9 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    <option>Standard</option>
+                    <option>Gold</option>
+                    <option>Platinum</option>
+                    <option>Premium</option>
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    onClick={() => {
+                      if (!newProductForm.name.trim()) return;
+                      const nextId = `R${productRules.length + 1}`;
+                      const newRule = {
+                        id: nextId,
+                        name: newProductForm.name.trim(),
+                        type: newProductForm.type,
+                        tier: newProductForm.tier,
+                        icon: newProductForm.type === 'Loan' ? '💰' : newProductForm.type === 'Insurance' ? '🛡️' : '💳',
+                        gradient: 'from-gray-500 to-gray-600',
+                        eligible: 0,
+                        approvalRate: 0,
+                        criteria: newProductForm.criteria.split('\n').filter(Boolean),
+                        benefits: newProductForm.benefits.split('\n').filter(Boolean),
+                      };
+                      setProductRules((prev) => [...prev, newRule]);
+                      setNewProductForm({ name: '', type: 'Credit Card', tier: 'Standard', criteria: '', benefits: '' });
+                      setIsAddingProduct(false);
+                    }}
+                  >
+                    Save Product
+                  </Button>
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">Eligibility Criteria (one per line)</label>
+                  <textarea
+                    className="w-full h-24 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    value={newProductForm.criteria}
+                    onChange={(e) => setNewProductForm({ ...newProductForm, criteria: e.target.value })}
+                    placeholder={"e.g.\nSalary ≥ ₹5L\nCredit Score ≥ 700"}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">Benefits (one per line)</label>
+                  <textarea
+                    className="w-full h-24 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    value={newProductForm.benefits}
+                    onChange={(e) => setNewProductForm({ ...newProductForm, benefits: e.target.value })}
+                    placeholder={"e.g.\n2% cashback\nTravel insurance"}
+                  />
+                </div>
+              </div>
+            </Card>
+          )}
+
+          <div className="space-y-4">
+            {productRules.map((rule) => (
               <Card key={rule.id} className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
@@ -677,7 +1043,99 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Performance</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Actions</h4>
+                    {editingProductId === rule.id ? (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 block">Eligibility Criteria</label>
+                          <div className="space-y-2">
+                            {editForm.criteria.map((c, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <Input
+                                  value={c}
+                                  onChange={(e) => {
+                                    const next = [...editForm.criteria];
+                                    next[idx] = e.target.value;
+                                    setEditForm({ ...editForm, criteria: next });
+                                  }}
+                                  placeholder="e.g., Salary ≥ ₹5L"
+                                  className="h-9 flex-1"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const next = editForm.criteria.filter((_, i) => i !== idx);
+                                    setEditForm({ ...editForm, criteria: next });
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditForm({ ...editForm, criteria: [...editForm.criteria, ''] })}
+                            >
+                              Add Criterion
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 block">Benefits</label>
+                          <div className="space-y-2">
+                            {editForm.benefits.map((b, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <Input
+                                  value={b}
+                                  onChange={(e) => {
+                                    const next = [...editForm.benefits];
+                                    next[idx] = e.target.value;
+                                    setEditForm({ ...editForm, benefits: next });
+                                  }}
+                                  placeholder="e.g., 2% cashback"
+                                  className="h-9 flex-1"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const next = editForm.benefits.filter((_, i) => i !== idx);
+                                    setEditForm({ ...editForm, benefits: next });
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditForm({ ...editForm, benefits: [...editForm.benefits, ''] })}
+                            >
+                              Add Benefit
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setProductRules((prev) => prev.map((r) => r.id === rule.id ? {
+                                ...r,
+                                criteria: editForm.criteria.filter(Boolean),
+                                benefits: editForm.benefits.filter(Boolean),
+                              } : r));
+                              setEditingProductId(null);
+                            }}
+                          >
+                            Save
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingProductId(null)}>Cancel</Button>
+                        </div>
+                      </div>
+                    ) : (
                     <div className="space-y-3">
                       <div>
                         <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Eligible Employees</p>
@@ -692,7 +1150,23 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
                           <div className="bg-green-600 h-2 rounded-full" style={{ width: `${rule.approvalRate}%` }} />
                         </div>
                       </div>
+                        <div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingProductId(rule.id);
+                              setEditForm({
+                                criteria: [...rule.criteria],
+                                benefits: [...rule.benefits],
+                              });
+                            }}
+                          >
+                            Edit Eligibility
+                          </Button>
                     </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </Card>
