@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { MessageSquare, Car, Home, LineChart, PiggyBank, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -31,10 +32,10 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({ userName }) => {
   };
 
   const suggestions = [
-    "💰 How to save tax?",
-    "🏠 Home loan eligibility",
-    "📈 Best investment options",
-    "🚗 Car loan calculator",
+    { icon: PiggyBank, label: "How to save tax?" },
+    { icon: Home, label: "Home loan eligibility" },
+    { icon: LineChart, label: "Best investment options" },
+    { icon: Car, label: "Car loan calculator" },
   ];
 
   return (
@@ -60,7 +61,9 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({ userName }) => {
         <div className="flex-1 overflow-y-auto space-y-3 mb-4">
           {messages.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-4xl mb-3">💬</div>
+              <div className="flex items-center justify-center mb-3">
+                <MessageSquare className="w-8 h-8 text-gray-400" />
+              </div>
               <p className="text-sm text-muted-foreground">
                 Hi {userName.split(' ')[0]}! Ask me anything about your finances.
               </p>
@@ -71,15 +74,26 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({ userName }) => {
                 key={idx}
                 className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className={`max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm ${
-                    msg.type === 'user'
-                      ? 'bg-primary text-white'
-                      : 'bg-muted border border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  {msg.text}
-                </div>
+                {msg.type === 'ai' ? (
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center justify-center mt-0.5">
+                      <Bot className="w-3 h-3 text-gray-500 dark:text-gray-300" />
+                    </div>
+                    <div className="max-w-[85%] rounded-lg px-3 py-2 text-xs shadow-sm bg-muted border border-gray-200 dark:border-gray-700">
+                      {msg.text}
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`max-w-[85%] rounded-lg px-3 py-2 text-xs shadow-sm ${
+                      msg.type === 'user'
+                        ? 'bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-900'
+                        : 'bg-muted border border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -94,11 +108,14 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({ userName }) => {
                 <button
                   key={idx}
                   onClick={() => {
-                    setInputValue(suggestion.slice(2));
+                    setInputValue(suggestion.label);
                   }}
                   className="text-xs bg-muted hover:bg-muted/80 rounded-lg p-2 text-left transition-colors border border-gray-200 dark:border-gray-700"
                 >
-                  {suggestion}
+                  <span className="inline-flex items-center gap-2">
+                    <suggestion.icon className="w-3.5 h-3.5 text-gray-500" />
+                    {suggestion.label}
+                  </span>
                 </button>
               ))}
             </div>
@@ -118,6 +135,7 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({ userName }) => {
             onClick={handleSend} 
             size="sm"
             disabled={!inputValue.trim()}
+            variant="secondary"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

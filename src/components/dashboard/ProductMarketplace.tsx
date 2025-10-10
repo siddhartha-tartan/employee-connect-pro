@@ -1,22 +1,23 @@
 import React, { useState } from "react";
+import { Package, Gem, Shield, LineChart, FileText, Banknote, Home, Car, GraduationCap } from "lucide-react";
 
 export const ProductMarketplace: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const categories = [
-    { id: 'all', label: 'All Products', icon: '📦' },
-    { id: 'savings', label: 'Savings & FD', icon: '💎' },
-    { id: 'insurance', label: 'Insurance', icon: '🛡️' },
-    { id: 'investments', label: 'Investments', icon: '📈' },
-    { id: 'tax', label: 'Tax Saving', icon: '📊' },
-    { id: 'loans', label: 'Loans', icon: '💰' },
+    { id: 'all', label: 'All Products', Icon: Package },
+    { id: 'savings', label: 'Savings & FD', Icon: Gem },
+    { id: 'insurance', label: 'Insurance', Icon: Shield },
+    { id: 'investments', label: 'Investments', Icon: LineChart },
+    { id: 'tax', label: 'Tax Saving', Icon: FileText },
+    { id: 'loans', label: 'Loans', Icon: Banknote },
   ];
 
   const products = [
     {
       id: 1,
       category: 'savings',
-      icon: '💎',
+      Icon: Gem,
       name: 'Fixed Deposit',
       description: 'Secure savings with guaranteed returns',
       rate: '7.5% p.a.',
@@ -27,7 +28,7 @@ export const ProductMarketplace: React.FC = () => {
     {
       id: 2,
       category: 'insurance',
-      icon: '🛡️',
+      Icon: Shield,
       name: 'Health Insurance',
       description: 'Comprehensive health coverage for family',
       rate: '₹5L coverage',
@@ -38,7 +39,7 @@ export const ProductMarketplace: React.FC = () => {
     {
       id: 3,
       category: 'insurance',
-      icon: '🚗',
+      Icon: Car,
       name: 'Accident Insurance',
       description: 'Personal accident cover for employees',
       rate: '₹10L coverage',
@@ -49,7 +50,7 @@ export const ProductMarketplace: React.FC = () => {
     {
       id: 4,
       category: 'investments',
-      icon: '📈',
+      Icon: LineChart,
       name: 'Mutual Funds',
       description: 'Diversified equity & debt funds',
       rate: '12-15% returns',
@@ -60,7 +61,7 @@ export const ProductMarketplace: React.FC = () => {
     {
       id: 5,
       category: 'tax',
-      icon: '📊',
+      Icon: FileText,
       name: 'ELSS Funds',
       description: 'Tax saving with wealth creation',
       rate: 'Save ₹46,800',
@@ -71,7 +72,7 @@ export const ProductMarketplace: React.FC = () => {
     {
       id: 6,
       category: 'tax',
-      icon: '📄',
+      Icon: FileText,
       name: 'Tax Filing Service',
       description: 'Expert-assisted ITR filing',
       rate: '₹999 only',
@@ -82,7 +83,7 @@ export const ProductMarketplace: React.FC = () => {
     {
       id: 7,
       category: 'loans',
-      icon: '🏠',
+      Icon: Home,
       name: 'Home Loan',
       description: 'Low interest home loans',
       rate: '8.25% p.a.',
@@ -93,7 +94,7 @@ export const ProductMarketplace: React.FC = () => {
     {
       id: 8,
       category: 'loans',
-      icon: '🎓',
+      Icon: GraduationCap,
       name: 'Education Loan',
       description: 'Fund your higher education',
       rate: '9.5% p.a.',
@@ -128,7 +129,7 @@ export const ProductMarketplace: React.FC = () => {
                 : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
-            <span>{cat.icon}</span>
+            <span className="inline-flex items-center"><cat.Icon className="w-4 h-4 mr-1" /></span>
             <span>{cat.label}</span>
           </button>
         ))}
@@ -143,7 +144,9 @@ export const ProductMarketplace: React.FC = () => {
           >
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
-                <div className="text-4xl">{product.icon}</div>
+                <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                  <product.Icon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-semibold ${product.badgeColor}`}>
                   {product.badge}
                 </span>

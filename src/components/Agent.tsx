@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AppLayout } from "./AppLayout";
 import { PageTransition } from "./PageTransition";
-import { Bot, Send } from "lucide-react";
+import { Bot, Send, IdCard, Shield, Fingerprint, Calendar, User, MapPin, Phone, Mail, Building2, Video, Info, Percent, Receipt, Zap, Timer, Bell, CreditCard } from "lucide-react";
 
 interface AgentProps {
   onLogout: () => void;
@@ -38,9 +38,11 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [typingText, setTypingText] = useState('');
   const [journeySteps, setJourneySteps] = useState<Array<{label: string, status: 'pending' | 'in-progress' | 'completed'}>>([]);
-  const [mobileOTP, setMobileOTP] = useState('');
-  const [aadhaarOTP, setAadhaarOTP] = useState('');
-  const [cardActivationOTP, setCardActivationOTP] = useState('');
+  const [mobileOTP, setMobileOTP] = useState('123456');
+  const [aadhaarOTP, setAadhaarOTP] = useState('654321');
+  const [cardActivationOTP, setCardActivationOTP] = useState('123456');
+  const [currentStepStartedAt, setCurrentStepStartedAt] = useState<number | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const userData = {
     name: "Rahul Sharma",
@@ -114,12 +116,85 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     }
   };
 
-  // Presentation helpers: strip markdown bold and leading emoji/punctuation for clean display
+  // Presentation helpers: strip markdown bold and any emoji for a mature look
   const formatText = (s?: string) => {
     if (!s) return '';
     return s
       .replace(/\*\*(.*?)\*\*/g, '$1')
-      .replace(/^[^A-Za-z0-9]+\s*/, '');
+      .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '')
+      .replace(/^\s+/, '');
+  };
+
+  // Lightweight confetti effect plus gentle highlight for successes
+  const triggerSuccessEffects = () => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const count = 14;
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('div');
+      el.style.position = 'absolute';
+      el.style.left = `${Math.random() * (rect.width - 8)}px`;
+      el.style.top = `0px`;
+      el.style.width = '5px';
+      el.style.height = '5px';
+      el.style.borderRadius = '2px';
+      el.style.opacity = '0.9';
+      el.style.background = ['#22c55e','#3b82f6','#f97316','#eab308','#a855f7'][Math.floor(Math.random()*5)];
+      el.style.transform = `translate3d(0,0,0) rotate(${Math.random()*360}deg)`;
+      el.style.transition = 'transform 800ms ease-out, opacity 900ms ease-out';
+      (container as HTMLElement).appendChild(el);
+      const dx = (Math.random() - 0.5) * 80;
+      const dy = 120 + Math.random() * 120;
+      requestAnimationFrame(() => {
+        el.style.transform = `translate3d(${dx}px, ${dy}px, 0) rotate(${Math.random()*720}deg)`;
+        el.style.opacity = '0';
+      });
+      setTimeout(() => { el.remove(); }, 1000);
+    }
+  };
+
+  const getHeaderIconByTitle = (title?: string) => {
+    const t = (title || '').toLowerCase();
+    if (t.includes('aadhaar') && t.includes('otp')) return <Fingerprint className="w-3.5 h-3.5 text-gray-500 mt-0.5" />;
+    if (t.includes('otp')) return <Phone className="w-3.5 h-3.5 text-gray-500 mt-0.5" />;
+    if (t.includes('account')) return <Building2 className="w-3.5 h-3.5 text-gray-500 mt-0.5" />;
+    if (t.includes('video kyc')) return <Video className="w-3.5 h-3.5 text-gray-500 mt-0.5" />;
+    return <Info className="w-3.5 h-3.5 text-gray-500 mt-0.5" />;
+  };
+
+  const getInteractiveHeaderIcon = (fields?: any[]) => {
+    const labels = (fields || []).map((f: any) => (f?.label || '').toLowerCase()).join(' ');
+    if (labels.includes('pan')) return <IdCard className="w-3.5 h-3.5 text-gray-500 mt-0.5" />;
+    if (labels.includes('aadhaar')) return <Fingerprint className="w-3.5 h-3.5 text-gray-500 mt-0.5" />;
+    if (labels.includes('mobile')) return <Phone className="w-3.5 h-3.5 text-gray-500 mt-0.5" />;
+    return <Info className="w-3.5 h-3.5 text-gray-500 mt-0.5" />;
+  };
+
+  const renderFieldIcon = (label: string) => {
+    const normalized = label.toLowerCase();
+    if (normalized.includes('pan')) return <IdCard className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('aadhaar')) return <Fingerprint className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('date of birth') || normalized.includes('dob')) return <Calendar className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('name')) return <User className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('address')) return <MapPin className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('mobile')) return <Phone className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('email')) return <Mail className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('account')) return <Building2 className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('video kyc')) return <Video className="w-4 h-4 text-gray-500" />;
+    return <Info className="w-4 h-4 text-gray-500" />;
+  };
+
+  const renderDetailIcon = (label: string) => {
+    const normalized = (label || '').toLowerCase();
+    if (normalized.includes('loan amount') || normalized.includes('amount')) return <Banknote className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('interest') || normalized.includes('rate')) return <Percent className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('tenure') || normalized.includes('duration')) return <Timer className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('processing')) return <Receipt className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('disbursal') || normalized.includes('instant')) return <Zap className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('reminder')) return <Bell className="w-4 h-4 text-gray-500" />;
+    if (normalized.includes('card')) return <CreditCard className="w-4 h-4 text-gray-500" />;
+    return <Info className="w-4 h-4 text-gray-500" />;
   };
 
 
@@ -679,6 +754,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     setActiveJourney('bank-account');
     setJourneySteps([
       { label: 'Mobile Verification', status: 'pending' },
+      { label: 'PAN Verification', status: 'pending' },
       { label: 'Aadhaar eKYC', status: 'pending' },
       { label: 'Video KYC Scheduling', status: 'pending' },
       { label: 'Account Setup', status: 'pending' },
@@ -687,6 +763,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
     // Step 1: Mobile Number Verification
     setJourneySteps(prev => prev.map((step, i) => i === 0 ? {...step, status: 'in-progress'} : step));
+    setCurrentStepStartedAt(Date.now());
     
     setIsThinking(true);
     await addThinkingSteps([
@@ -728,50 +805,97 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     const otpValue = mobileOTP || '123456';
     setMessages(prev => [...prev, {
       type: 'user',
-      text: `${otpValue} ✓`,
+      text: `${otpValue}`,
       timestamp: Date.now()
     }]);
     setMobileOTP('');
 
     setJourneySteps(prev => prev.map((step, i) => i === 0 ? {...step, status: 'completed'} : step));
+    triggerSuccessEffects();
     
     await new Promise(resolve => setTimeout(resolve, 400));
 
     setMessages(prev => [...prev, {
       type: 'agent',
-      text: '✅ Mobile verified successfully! Now let\'s complete your identity verification with Aadhaar eKYC.',
+      text: 'Mobile verified successfully! Next, let\'s verify your PAN.',
       timestamp: Date.now()
     }]);
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Step 2: Aadhaar eKYC (Combined)
-    setJourneySteps(prev => prev.map((step, i) => i === 1 ? {...step, status: 'in-progress'} : step));
+    // Step 2: PAN Verification
+    setJourneySteps(prev => prev.map((step, i) => i === 1 ? ({ ...step, status: 'in-progress' }) : step));
+    setCurrentStepStartedAt(Date.now());
 
-    await new Promise(resolve => setTimeout(resolve, 400));
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     setMessages(prev => [...prev, {
       type: 'interactive',
-      text: `I've pre-filled your details from our records. Please verify:`,
+      text: `Please confirm your PAN details:`,
       data: {
         fields: [
-          { label: 'PAN Number', value: userData.pan, icon: '🆔', verified: true },
-          { label: 'Aadhaar Number', value: userData.aadhaar, icon: '🔐', editable: true },
-          { label: 'Date of Birth', value: userData.dob, icon: '📅', verified: true },
-          { label: 'Name as per Aadhaar', value: userData.name, icon: '👤', verified: true }
+          { label: 'PAN Number', value: userData.pan, verified: true },
+          { label: 'Name', value: userData.name, verified: true }
         ]
       },
       actions: [
-        { label: 'Verify & Start eKYC', action: 'verify-pan-aadhaar', variant: 'primary' }
+        { label: 'Verify PAN', action: 'verify-pan', variant: 'primary' }
       ],
       timestamp: Date.now()
     }]);
   };
 
+  const handleVerifyPan = async () => {
+    setIsThinking(true);
+    await addThinkingSteps([
+      'Validating PAN with NSDL...',
+      'PAN linked to your profile confirmed'
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setMessages(prev => prev.filter(m => m.type !== 'thinking'));
+    setIsThinking(false);
+
+    // Complete PAN step
+    setJourneySteps(prev => prev.map((step, i) => i === 1 ? ({ ...step, status: 'completed' }) : step));
+
+    // Start Aadhaar eKYC step
+    setJourneySteps(prev => prev.map((step, i) => i === 2 ? ({ ...step, status: 'in-progress' }) : step));
+    setCurrentStepStartedAt(Date.now());
+
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      text: "PAN verified. Now let's complete Aadhaar eKYC.",
+      timestamp: Date.now()
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    setMessages(prev => {
+      const exists = prev.some(m => m.type === 'interactive' && m.text === `I've pre-filled your details from our records. Please verify:`);
+      if (exists) return prev;
+      return [...prev, {
+        type: 'interactive',
+        text: `I've pre-filled your details from our records. Please verify:`,
+        data: {
+          fields: [
+            { label: 'Aadhaar Number', value: userData.aadhaar, editable: true },
+            { label: 'Date of Birth', value: userData.dob, verified: true },
+            { label: 'Name as per Aadhaar', value: userData.name, verified: true }
+          ]
+        },
+        actions: [
+          { label: 'Start Aadhaar eKYC', action: 'verify-pan-aadhaar', variant: 'primary' }
+        ],
+        timestamp: Date.now()
+      }];
+    });
+  };
+
   const handleVerifyPanAadhaar = async () => {
     setMessages(prev => [...prev, {
       type: 'user',
-      text: 'Confirmed ✓',
+      text: 'Confirmed',
       timestamp: Date.now()
     }]);
 
@@ -819,7 +943,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     const otpValue = aadhaarOTP || '654321';
     setMessages(prev => [...prev, {
       type: 'user',
-      text: `${otpValue} ✓`,
+      text: `${otpValue}`,
       timestamp: Date.now()
     }]);
     setAadhaarOTP('');
@@ -834,8 +958,8 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     await new Promise(resolve => setTimeout(resolve, 1500));
     setMessages(prev => prev.filter(m => m.type !== 'thinking'));
     setIsThinking(false);
-
-    setJourneySteps(prev => prev.map((step, i) => i === 1 ? {...step, status: 'completed'} : step));
+    setJourneySteps(prev => prev.map((step, i) => i === 2 ? {...step, status: 'completed'} : step));
+    triggerSuccessEffects();
 
     setMessages(prev => [...prev, {
       type: 'agent',
@@ -850,10 +974,10 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
       text: `Address from Aadhaar:\n${userData.address}`,
       data: {
         fields: [
-          { label: 'Name', value: userData.name, icon: '👤', verified: true },
-          { label: 'Date of Birth', value: userData.dob, icon: '📅', verified: true },
-          { label: 'Address', value: userData.address, icon: '📍', verified: true },
-          { label: 'PAN', value: userData.pan, icon: '🆔', verified: true }
+          { label: 'Name', value: userData.name, verified: true },
+          { label: 'Date of Birth', value: userData.dob, verified: true },
+          { label: 'Address', value: userData.address, verified: true },
+          { label: 'Aadhaar', value: userData.aadhaar, verified: true }
         ]
       },
       timestamp: Date.now()
@@ -862,7 +986,8 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     await new Promise(resolve => setTimeout(resolve, 800));
 
     // Step 3: Video KYC Scheduling
-    setJourneySteps(prev => prev.map((step, i) => i === 2 ? {...step, status: 'in-progress'} : step));
+    setJourneySteps(prev => prev.map((step, i) => i === 3 ? {...step, status: 'in-progress'} : step));
+    setCurrentStepStartedAt(Date.now());
 
     setMessages(prev => [...prev, {
       type: 'agent',
@@ -900,11 +1025,12 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     
     setMessages(prev => [...prev, {
       type: 'user',
-      text: `${slotLabel} 📅`,
+      text: `${slotLabel}`,
       timestamp: Date.now()
     }]);
 
-    setJourneySteps(prev => prev.map((step, i) => i === 2 ? {...step, status: 'completed'} : step));
+    setJourneySteps(prev => prev.map((step, i) => i === 3 ? {...step, status: 'completed'} : step));
+    triggerSuccessEffects();
 
     await new Promise(resolve => setTimeout(resolve, 400));
 
@@ -936,7 +1062,8 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     await new Promise(resolve => setTimeout(resolve, 700));
 
     // Step 4: Account Setup Summary
-    setJourneySteps(prev => prev.map((step, i) => i === 3 ? {...step, status: 'in-progress'} : step));
+    setJourneySteps(prev => prev.map((step, i) => i === 4 ? {...step, status: 'in-progress'} : step));
+    setCurrentStepStartedAt(Date.now());
 
     setMessages(prev => [...prev, {
       type: 'agent',
@@ -974,16 +1101,18 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
   const handleConfirmPreferences = async () => {
     setMessages(prev => [...prev, {
       type: 'user',
-      text: 'Confirmed ✓',
+      text: 'Confirmed',
       timestamp: Date.now()
     }]);
 
-    setJourneySteps(prev => prev.map((step, i) => i === 3 ? {...step, status: 'completed'} : step));
+    setJourneySteps(prev => prev.map((step, i) => i === 4 ? {...step, status: 'completed'} : step));
+    triggerSuccessEffects();
 
     await new Promise(resolve => setTimeout(resolve, 400));
 
     // Step 5: Account Activation
-    setJourneySteps(prev => prev.map((step, i) => i === 4 ? {...step, status: 'in-progress'} : step));
+    setJourneySteps(prev => prev.map((step, i) => i === 5 ? {...step, status: 'in-progress'} : step));
+    setCurrentStepStartedAt(Date.now());
 
     setIsThinking(true);
     await addThinkingSteps([
@@ -998,7 +1127,8 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
     setMessages(prev => prev.filter(m => m.type !== 'thinking'));
     setIsThinking(false);
 
-    setJourneySteps(prev => prev.map((step, i) => i === 4 ? {...step, status: 'completed'} : step));
+    setJourneySteps(prev => prev.map((step, i) => i === 5 ? {...step, status: 'completed'} : step));
+    triggerSuccessEffects();
 
     const accountNumber = '50100' + Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
     const virtualCardNumber = '4532' + Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
@@ -1583,7 +1713,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
               <Card className="flex-1 flex flex-col rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div ref={chatContainerRef} className="relative flex-1 overflow-y-auto p-6 space-y-4">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center max-w-2xl px-6">
@@ -1624,11 +1754,11 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                 ) : (
                   <div className="space-y-4">
                     {messages.map((msg, idx) => (
-                      <div key={idx} className="animate-fadeIn">
+                      <div key={idx} className={`animate-fadeIn ${currentStepStartedAt && msg.timestamp && msg.timestamp < currentStepStartedAt ? 'opacity-60' : ''}`}>
                         {msg.type === 'user' && (
                           <div className="flex justify-end">
-                            <div className="max-w-[70%] bg-primary text-white rounded-2xl rounded-tr-md px-4 py-2.5 shadow-sm">
-                              <p className="text-sm leading-relaxed">{msg.text}</p>
+                            <div className="max-w-[70%] bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-900 rounded-xl px-3 py-2 shadow-sm">
+                              <p className="text-xs leading-relaxed">{msg.text}</p>
                             </div>
                           </div>
                         )}
@@ -1648,12 +1778,12 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
                         {msg.type === 'agent' && (
                           <div className="flex justify-start">
-                            <div className="max-w-[80%] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
-                              <div className="flex items-start space-x-3">
-                                <div className="w-7 h-7 bg-gradient-to-br from-[hsl(var(--primary))] to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <Bot className="w-4 h-4 text-white" />
+                            <div className="max-w-[75%] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 shadow-sm">
+                              <div className="flex items-start space-x-2">
+                                <div className="w-6 h-6 bg-gradient-to-br from-[hsl(var(--primary))] to-blue-700 rounded-md flex items-center justify-center flex-shrink-0">
+                                  <Bot className="w-3.5 h-3.5 text-white" />
                                 </div>
-                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-line pt-0.5">{formatText(msg.text)}</p>
+                                <p className="text-xs text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-line pt-0.5">{formatText(msg.text)}</p>
                               </div>
                             </div>
                           </div>
@@ -1662,10 +1792,13 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                         {msg.type === 'interactive' && (
                           <div className="flex justify-start">
                             <div className="max-w-[85%] w-full">
-                              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-tl-md shadow-sm overflow-hidden">
+                              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
                                 {msg.text && (
-                                  <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{formatText(msg.text)}</p>
+                                  <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                                    <div className="flex items-start space-x-2">
+                                      {getInteractiveHeaderIcon(msg.data?.fields)}
+                                      <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-line">{formatText(msg.text)}</p>
+                                    </div>
                                   </div>
                                 )}
                                 {msg.data?.fields && (
@@ -1673,7 +1806,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                     {msg.data.fields.map((field: any, i: number) => (
                                       <div key={i} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                                         <div className="flex items-center space-x-2 flex-1">
-                                          <span className="text-lg">{field.icon}</span>
+                                          {renderFieldIcon(field.label)}
                                           <div className="flex-1">
                                             <p className="text-xs text-gray-500 dark:text-gray-400">{field.label}</p>
                                             <p className="text-sm font-medium text-gray-900 dark:text-white">{field.value}</p>
@@ -1690,12 +1823,13 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                   </div>
                                 )}
                                 {msg.actions && msg.actions.length > 0 && (
-                                  <div className="p-3 bg-gray-50 dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex gap-2">
+                                  <div className="p-2 bg-gray-50 dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex gap-2">
                                     {msg.actions.map((action: any, i: number) => (
                                       <Button 
                                         key={i}
                                         onClick={() => {
                                           if (action.action === 'verify-mobile-otp') handleVerifyMobileOTP();
+                                          else if (action.action === 'verify-pan') handleVerifyPan();
                                           else if (action.action === 'verify-pan-aadhaar') handleVerifyPanAadhaar();
                                           else if (action.action === 'verify-aadhaar-otp') handleVerifyAadhaarOTP();
                                           else if (action.action === 'confirm-preferences') handleConfirmPreferences();
@@ -1703,10 +1837,10 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                           else if (action.action === 'verify-card-otp') handleVerifyCardOTP();
                                           else if (action.action === 'finalize-card-activation') handleFinalizeCardActivation();
                                         }}
-                                        variant={action.variant === 'ghost' ? 'outline' : action.variant === 'secondary' ? 'secondary' : 'default'}
-                                        className="flex-1 text-sm h-9"
+                                        variant={action.variant === 'ghost' ? 'outline' : 'secondary'}
+                                        className="flex-1 text-xs h-8"
                                       >
-                                        {action.label}
+                                        {formatText(action.label)}
                                       </Button>
                                     ))}
                                   </div>
@@ -1719,18 +1853,19 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                         {msg.type === 'info-card' && (
                           <div className="flex justify-start">
                             <div className="max-w-[85%] w-full">
-                              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-tl-md shadow-sm overflow-hidden">
-                                <div className="p-4">
-                                  <div className="flex items-start space-x-3 mb-3">
+                              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+                                <div className="p-3">
+                                  <div className="flex items-start space-x-2 mb-2">
+                                    {getHeaderIconByTitle(msg.data?.title)}
                                     <div className="flex-1">
-                                      <h4 className="font-semibold text-sm text-gray-900 dark:text-white">{msg.data?.title}</h4>
+                                      <h4 className="font-semibold text-xs text-gray-900 dark:text-white">{msg.data?.title}</h4>
                                       {msg.data?.subtitle && (
-                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{msg.data.subtitle}</p>
+                                        <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-0.5">{msg.data.subtitle}</p>
                                       )}
                                     </div>
                                   </div>
                                   {msg.data?.items && msg.data.items.length > 0 && (
-                                    <div className="space-y-2 mb-3">
+                                    <div className="space-y-2 mb-2">
                                       {msg.data.items.map((item: any, i: number) => (
                                         <div key={i} className="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
                                           <span className="text-gray-600 dark:text-gray-400">{item.label}</span>
@@ -1778,7 +1913,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                   )}
                                 </div>
                                 {msg.actions && msg.actions.length > 0 && (
-                                  <div className="p-3 bg-white/50 dark:bg-gray-800/50 border-t border-blue-200 dark:border-blue-800 flex flex-wrap gap-2">
+                                  <div className="p-2 bg-white/50 dark:bg-gray-800/50 border-t border-blue-200 dark:border-blue-800 flex flex-wrap gap-2">
                                     {msg.actions.map((action: any, i: number) => (
                                       <Button 
                                         key={i}
@@ -1797,10 +1932,10 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                           else if (action.action === 'request-salary-account') handleRequestSalaryAccount();
                                           else if (action.action === 'view-credit-offers') handleViewCreditOffers();
                                         }}
-                                        variant={action.variant === 'ghost' ? 'outline' : action.variant === 'secondary' ? 'secondary' : 'default'}
-                                        className="flex-1 text-sm h-9"
+                                        variant={action.variant === 'ghost' ? 'outline' : 'secondary'}
+                                        className="flex-1 text-xs h-8"
                                       >
-                                        {action.label}
+                                        {formatText(action.label)}
                                       </Button>
                                     ))}
                                   </div>
@@ -1864,6 +1999,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                       }
                                     }}
                                     className="w-full h-9 text-sm"
+                                    variant="secondary"
                                   >
                                     Confirm & Continue →
                                   </Button>
@@ -1889,7 +2025,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                     <div className="grid grid-cols-2 gap-3 mb-4">
                                       {msg.data.details.map((detail: any, i: number) => (
                                         <div key={i} className="flex items-start space-x-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-                                          <span className="text-xl">{detail.icon}</span>
+                                          {renderDetailIcon(detail.label)}
                                           <div>
                                             <p className="text-xs text-gray-600 dark:text-gray-400">{detail.label}</p>
                                             <p className="text-sm font-semibold text-gray-900 dark:text-white">{detail.value}</p>
@@ -2004,6 +2140,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                           <Button 
                                             onClick={handleStartTaxInvestments}
                                             className="w-full"
+                                            variant="secondary"
                                           >
                                             Start Tax-Saving Investments
                                             <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2018,6 +2155,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                           <Button 
                                             onClick={handlePurchaseInsurance}
                                             className="w-full"
+                                            variant="secondary"
                                           >
                                             Purchase Insurance Package
                                             <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2070,6 +2208,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                           <Button 
                                             onClick={handleStartSIP}
                                             className="w-full"
+                                            variant="secondary"
                                           >
                                             Start SIP Investment
                                             <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2113,7 +2252,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                       {msg.data.details.slice(0, 4).map((detail: string, i: number) => (
                                         <div key={i} className="flex items-start space-x-2 text-xs">
                                           <span className="text-green-600 mt-0.5">•</span>
-                                          <span className="text-gray-700 dark:text-gray-300">{detail}</span>
+                                          <span className="text-gray-700 dark:text-gray-300">{formatText(detail)}</span>
                                         </div>
                                       ))}
                                     </div>
@@ -2125,7 +2264,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                                         {msg.data.nextSteps.slice(0, 3).map((step: string, i: number) => (
                                           <div key={i} className="flex items-start space-x-2 text-xs">
                                             <span className="text-blue-600 dark:text-blue-400 font-bold mt-0.5">{i + 1}.</span>
-                                            <span className="text-gray-700 dark:text-gray-300">{step}</span>
+                                            <span className="text-gray-700 dark:text-gray-300">{formatText(step)}</span>
                                           </div>
                                         ))}
                                       </div>

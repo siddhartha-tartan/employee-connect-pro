@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Car, Home, PiggyBank, LineChart } from "lucide-react";
 
 interface AIAssistantProps {
   userName: string;
@@ -11,16 +12,16 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ userName, isExpanded, 
   const [messages, setMessages] = useState([
     {
       type: 'assistant' as const,
-      text: `Hi ${userName.split(' ')[0]}! 👋 I'm your AI Financial Advisor. I can help you plan for your goals, find the best financial products, and answer any questions about your benefits.`
+      text: `Hi ${userName.split(' ')[0]}! I'm your AI Financial Advisor. I can help you plan for your goals, find the best financial products, and answer any questions about your benefits.`
     }
   ]);
   const [inputValue, setInputValue] = useState('');
 
   const quickActions = [
-    { icon: '🚗', label: 'Plan to buy a car', action: 'car' },
-    { icon: '🏠', label: 'Home loan planning', action: 'home' },
-    { icon: '💰', label: 'Investment advice', action: 'invest' },
-    { icon: '📊', label: 'Tax saving tips', action: 'tax' },
+    { Icon: Car, label: 'Plan to buy a car', action: 'car' },
+    { Icon: Home, label: 'Home loan planning', action: 'home' },
+    { Icon: PiggyBank, label: 'Investment advice', action: 'invest' },
+    { Icon: LineChart, label: 'Tax saving tips', action: 'tax' },
   ];
 
   const handleQuickAction = (action: string) => {
@@ -49,10 +50,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ userName, isExpanded, 
     // Simulate AI response
     setTimeout(() => {
       const responses: Record<string, string> = {
-        'car': "Great! 🚗 Based on your salary of ₹8.5L/year, I recommend:\n\n1. **Pre-approved Car Loan**: Up to ₹12L at 8.5% interest\n2. **Down payment savings**: Start an auto-debit RD of ₹15k/month\n3. **Insurance**: Bundled car + personal accident coverage\n\nWould you like me to start your car loan application?",
-        'home': "Excellent decision! 🏠 Let me create a personalized home buying plan:\n\n1. **Pre-approved Home Loan**: Up to ₹40L at 8.25%\n2. **Eligibility**: Based on 3.5 years tenure\n3. **Tax benefits**: Save up to ₹3.5L/year\n\nShall we start with a quick eligibility check?",
-        'invest': "Perfect timing! 💰 Here are personalized investment options:\n\n1. **ELSS Mutual Funds**: Tax-saving + wealth creation\n2. **Fixed Deposits**: 7.5% returns, fully secure\n3. **Systematic Investment Plans**: Start with ₹5k/month\n\nWhat's your investment goal and time horizon?",
-        'tax': "I can help you save significantly! 📊\n\n**Current tax bracket**: 30%\n**Potential savings**: Up to ₹1.5L\n\nRecommended:\n1. ELSS: ₹1.5L under 80C\n2. Health Insurance: ₹25k under 80D\n3. NPS: Additional ₹50k under 80CCD\n\nWant me to create a tax-saving plan?"
+        'car': "Great! Based on your salary of ₹8.5L/year, I recommend:\n\n1. Pre-approved Car Loan: Up to ₹12L at 8.5% interest\n2. Down payment savings: Start an auto-debit RD of ₹15k/month\n3. Insurance: Bundled car + personal accident coverage\n\nWould you like me to start your car loan application?",
+        'home': "Excellent decision! Let me create a personalized home buying plan:\n\n1. Pre-approved Home Loan: Up to ₹40L at 8.25%\n2. Eligibility: Based on 3.5 years tenure\n3. Tax benefits: Save up to ₹3.5L/year\n\nShall we start with a quick eligibility check?",
+        'invest': "Perfect timing! Here are personalized investment options:\n\n1. ELSS Mutual Funds: Tax-saving + wealth creation\n2. Fixed Deposits: 7.5% returns, fully secure\n3. Systematic Investment Plans: Start with ₹5k/month\n\nWhat's your investment goal and time horizon?",
+        'tax': "I can help you save significantly!\n\nCurrent tax bracket: 30%\nPotential savings: Up to ₹1.5L\n\nRecommended:\n1. ELSS: ₹1.5L under 80C\n2. Health Insurance: ₹25k under 80D\n3. NPS: Additional ₹50k under 80CCD\n\nWant me to create a tax-saving plan?"
       };
 
       let responseText = "I understand you're interested in that! Let me analyze your profile and suggest the best options. Could you provide more details about your timeline and budget?";
@@ -99,7 +100,9 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ userName, isExpanded, 
                     onClick={() => handleQuickAction(action.action)}
                     className="bg-white/10 backdrop-blur hover:bg-white/20 rounded-xl p-4 text-left transition-all hover:scale-105"
                   >
-                    <div className="text-2xl mb-2">{action.icon}</div>
+                    <div className="mb-2">
+                      <action.Icon className="w-5 h-5 text-white" />
+                    </div>
                     <div className="text-sm font-medium">{action.label}</div>
                   </button>
                 ))}

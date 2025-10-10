@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { CreditCard, PiggyBank, Home } from "lucide-react";
 
 export const PreApprovedOffers: React.FC = () => {
   const offers = [
@@ -13,7 +14,7 @@ export const PreApprovedOffers: React.FC = () => {
       badge: 'Pre-approved',
       badgeColor: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
       gradient: 'from-yellow-500 to-orange-500',
-      icon: '💳',
+      Icon: CreditCard,
       expiresIn: '7 days'
     },
     {
@@ -26,7 +27,7 @@ export const PreApprovedOffers: React.FC = () => {
       badge: 'Pre-approved',
       badgeColor: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
       gradient: 'from-blue-500 to-cyan-500',
-      icon: '💰',
+      Icon: PiggyBank,
       expiresIn: '5 days'
     },
     {
@@ -39,7 +40,7 @@ export const PreApprovedOffers: React.FC = () => {
       badge: 'Limited offer',
       badgeColor: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
       gradient: 'from-purple-500 to-pink-500',
-      icon: '🏠',
+      Icon: Home,
       expiresIn: '10 days'
     },
   ];
@@ -69,7 +70,9 @@ export const PreApprovedOffers: React.FC = () => {
                   {offer.badge}
                 </span>
               </div>
-              <div className="text-4xl mb-3">{offer.icon}</div>
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center mb-3">
+                <offer.Icon className="w-5 h-5 text-white" />
+              </div>
               <p className="text-sm opacity-90 mb-1">{offer.type}</p>
               <h3 className="text-xl font-bold mb-1">{offer.title}</h3>
               <p className="text-sm opacity-80">{offer.subtitle}</p>

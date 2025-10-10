@@ -1,11 +1,12 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { Car, Globe, Home, GraduationCap, PiggyBank, Lightbulb } from "lucide-react";
 
 export const GoalJourneys: React.FC = () => {
   const activeGoals = [
     {
       id: 1,
-      icon: '🚗',
+      icon: Car,
       title: 'Buy a Car',
       target: '₹8L',
       current: '₹2.3L',
@@ -20,7 +21,7 @@ export const GoalJourneys: React.FC = () => {
     },
     {
       id: 2,
-      icon: '🏖️',
+      icon: Globe,
       title: 'Europe Trip',
       target: '₹3.5L',
       current: '₹1.8L',
@@ -36,10 +37,10 @@ export const GoalJourneys: React.FC = () => {
   ];
 
   const suggestedGoals = [
-    { icon: '🏠', title: 'Buy a Home', timeline: '3-5 years' },
-    { icon: '👶', title: 'Child Education', timeline: '10+ years' },
-    { icon: '🌴', title: 'Retirement Planning', timeline: '20+ years' },
-    { icon: '💍', title: 'Wedding', timeline: '1-2 years' },
+    { icon: Home, title: 'Buy a Home', timeline: '3-5 years' },
+    { icon: GraduationCap, title: 'Child Education', timeline: '10+ years' },
+    { icon: PiggyBank, title: 'Retirement Planning', timeline: '20+ years' },
+    { icon: Home, title: 'Wedding', timeline: '1-2 years' },
   ];
 
   return (
@@ -61,7 +62,9 @@ export const GoalJourneys: React.FC = () => {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="text-4xl">{goal.icon}</div>
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                    <goal.icon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                  </div>
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">{goal.title}</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{goal.timeline} remaining</p>
@@ -91,8 +94,8 @@ export const GoalJourneys: React.FC = () => {
 
               {/* Recommendations */}
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-4">
-                <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                  💡 AI Recommendations
+                <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-2 inline-flex items-center gap-1">
+                  <Lightbulb className="w-3.5 h-3.5" /> AI Recommendations
                 </p>
                 <div className="space-y-2">
                   {goal.recommendations.map((rec, idx) => (
@@ -141,7 +144,9 @@ export const GoalJourneys: React.FC = () => {
               key={idx}
               className="bg-white dark:bg-gray-800 rounded-xl p-4 text-left hover:shadow-lg transition-all hover:scale-105"
             >
-              <div className="text-3xl mb-2">{goal.icon}</div>
+              <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-2">
+                <goal.icon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              </div>
               <p className="font-semibold text-gray-900 dark:text-white text-sm mb-1">{goal.title}</p>
               <p className="text-xs text-gray-600 dark:text-gray-400">{goal.timeline}</p>
             </button>

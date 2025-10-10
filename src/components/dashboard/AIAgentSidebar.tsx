@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Bot, PiggyBank, Home, LineChart, Gem, MessageSquare } from "lucide-react";
 
 interface Message {
   type: 'user' | 'agent' | 'thinking';
@@ -28,7 +29,7 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
 
   const smartActions = [
     {
-      icon: '💰',
+      Icon: PiggyBank,
       question: 'What interest rate for personal loan?',
       shortLabel: 'Loan Interest Rate',
       agenticResponse: {
@@ -55,7 +56,7 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
       }
     },
     {
-      icon: '🏠',
+      Icon: Home,
       question: 'Am I eligible for home loan?',
       shortLabel: 'Home Loan Check',
       agenticResponse: {
@@ -82,7 +83,7 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
       }
     },
     {
-      icon: '📊',
+      Icon: LineChart,
       question: 'How to save maximum tax?',
       shortLabel: 'Tax Optimization',
       agenticResponse: {
@@ -110,7 +111,7 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
       }
     },
     {
-      icon: '💎',
+      Icon: Gem,
       question: 'Best investment for 1 year?',
       shortLabel: 'Investment Advice',
       agenticResponse: {
@@ -208,6 +209,8 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
     });
   };
 
+  const stripEmoji = (s: string) => s.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
+
   return (
     <div className="sticky top-24 h-[calc(100vh-7rem)]">
       {/* Single Unified Agent Card */}
@@ -217,9 +220,7 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
           <div className="flex items-center space-x-3">
             <div className="relative">
               <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+                <Bot className="w-5 h-5" />
               </div>
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
             </div>
@@ -233,15 +234,19 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
         {/* Smart Actions - Integrated */}
         {messages.length === 0 && (
           <div className="p-4 bg-gray-50 dark:from-gray-800/50 border-b border-gray-100 dark:border-gray-700">
-            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">🚀 Try these smart actions:</p>
+            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">Try these smart actions:</p>
             <div className="grid grid-cols-2 gap-2">
               {smartActions.map((action, idx) => (
                 <button
                   key={idx}
-                  onClick={() => handleSmartAction(action)}
+                  onClick={() => handleSmartAction(action as any)}
                   className="group bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg p-3 text-left transition-all border border-gray-200 dark:border-gray-700 hover:border-blue-300 shadow-sm"
                 >
-                  <div className="text-2xl mb-1">{action.icon}</div>
+                  <div className="mb-1">
+                    {(action as any).Icon ? (
+                      <(action as any).Icon className="w-4 h-4 text-gray-500" />
+                    ) : null}
+                  </div>
                   <div className="text-xs font-medium text-gray-900 dark:text-white leading-tight">
                     {action.shortLabel}
                   </div>
@@ -256,7 +261,9 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <div className="text-5xl mb-3">🤖</div>
+                <div className="flex items-center justify-center mb-3">
+                  <MessageSquare className="w-8 h-8 text-gray-400" />
+                </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 px-6">
                   Hi {userName.split(' ')[0]}! I'm FinAgent, your AI-powered financial advisor.
                 </p>
@@ -268,7 +275,7 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
               <div key={idx}>
                 {msg.type === 'user' && (
                   <div className="flex justify-end">
-                    <div className="max-w-[85%] bg-primary text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm">
+                    <div className="max-w-[85%] bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-900 rounded-xl px-3 py-2 text-xs shadow-sm">
                       {msg.text}
                     </div>
                   </div>
@@ -284,7 +291,7 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
                       {msg.steps.map((step, i) => (
                         <div key={i} className="flex items-start space-x-2 text-xs text-gray-600 dark:text-gray-400 mb-1">
                           <span className="text-green-500 mt-0.5">✓</span>
-                          <span>{step}</span>
+                          <span>{stripEmoji(step)}</span>
                         </div>
                       ))}
                     </div>
@@ -309,7 +316,7 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
                                 <svg className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                 </svg>
-                                <span>{detail}</span>
+                                <span>{stripEmoji(detail)}</span>
                               </div>
                             ))}
                           </div>
@@ -340,6 +347,7 @@ export const AIAgentSidebar: React.FC<AIAgentSidebarProps> = ({ userName, salary
               size="sm"
               disabled={!inputValue.trim() || isThinking}
               className="shrink-0"
+              variant="secondary"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
