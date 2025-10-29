@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { PageTransition } from "./PageTransition";
-import { TrendingUp, TrendingDown, Users, CreditCard, Building2, BarChart3, RefreshCw } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Users, CreditCard, Building2, BarChart3, RefreshCw } from "lucide-react";
 
 interface HRContentProps {
   activeTab: string;
@@ -29,7 +28,6 @@ export const HRContent: React.FC<HRContentProps> = ({ activeTab, onTabChange }) 
   const [isSetupComplete, setIsSetupComplete] = useState(() => {
     return localStorage.getItem('hrms_setup_complete') === 'true';
   });
-  const [selectedProduct, setSelectedProduct] = useState('credit-cards');
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [showEmployeeDetail, setShowEmployeeDetail] = useState(false);
   const [isSyncingEmployees, setIsSyncingEmployees] = useState(false);
@@ -761,123 +759,6 @@ export const HRContent: React.FC<HRContentProps> = ({ activeTab, onTabChange }) 
              </Card>
            </div>
 
-           {/* Monthly Product Adoption Trends */}
-           <Card className="p-6">
-             <div className="flex items-center justify-between mb-6">
-               <div>
-                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Monthly Product Adoption Trends</h3>
-                 <p className="text-xs text-gray-500 mt-1">Total employees using product (last 12 months)</p>
-              </div>
-          </div>
-
-             {/* Product Filter */}
-             <div className="flex gap-2 mb-6 flex-wrap">
-               {[
-                 { id: 'credit-cards', label: 'Credit Cards', lineColor: '#3b82f6' },
-                 { id: 'personal-loans', label: 'Personal Loans', lineColor: '#a855f7' },
-                 { id: 'insurance', label: 'Insurance', lineColor: '#22c55e' },
-                 { id: 'tax-fd', label: 'Tax FD', lineColor: '#f97316' },
-                 { id: 'home-loans', label: 'Home Loans', lineColor: '#ec4899' },
-               ].map((product) => (
-                <button 
-                   key={product.id}
-                   onClick={() => setSelectedProduct(product.id)}
-                   className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
-                     selectedProduct === product.id
-                       ? 'bg-primary text-white shadow-md'
-                       : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                   }`}
-                   style={selectedProduct === product.id ? { backgroundColor: product.lineColor } : {}}
-                 >
-                   {product.label}
-                </button>
-                ))}
-              </div>
-
-             {/* Line Chart */}
-              <div className="space-y-4">
-               {(() => {
-                 const productData = {
-                   'credit-cards': { 
-                     months: [720, 745, 765, 780, 795, 810, 820, 825, 835, 840, 845, 847],
-                     lineColor: '#3b82f6'
-                   },
-                   'personal-loans': { 
-                     months: [480, 495, 510, 520, 530, 535, 540, 545, 550, 555, 560, 562],
-                     lineColor: '#a855f7'
-                   },
-                   'insurance': { 
-                     months: [980, 1000, 1020, 1035, 1050, 1065, 1075, 1085, 1095, 1100, 1105, 1109],
-                     lineColor: '#22c55e'
-                   },
-                   'tax-fd': { 
-                     months: [350, 365, 375, 385, 390, 395, 400, 405, 410, 415, 420, 424],
-                     lineColor: '#f97316'
-                   },
-                   'home-loans': { 
-                     months: [100, 110, 115, 120, 125, 130, 135, 138, 142, 145, 148, 150],
-                     lineColor: '#ec4899'
-                   },
-                 };
-                 
-                 const data = productData[selectedProduct as keyof typeof productData];
-                 const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                 const change = ((data.months[11] - data.months[0]) / data.months[0] * 100).toFixed(1);
-                 
-                 // Format data for Recharts
-                 const chartData = data.months.map((value, idx) => ({
-                   month: monthLabels[idx],
-                   employees: value
-                 }));
-                 
-                 return (
-                   <div>
-                     <div className="flex items-center justify-between mb-4">
-                       <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Employees</span>
-                       <span className={`text-sm font-semibold ${Number(change) > 0 ? 'text-green-600' : 'text-red-600'} flex items-center`}>
-                         {Number(change) > 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
-                         {Math.abs(Number(change))}% growth this year
-                       </span>
-                </div>
-                     
-                     {/* Recharts Line Chart */}
-                     <ResponsiveContainer width="100%" height={300}>
-                       <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
-                         <XAxis 
-                           dataKey="month" 
-                           tick={{ fontSize: 12, fill: '#6b7280' }}
-                           stroke="#9ca3af"
-                         />
-                         <YAxis 
-                           tick={{ fontSize: 12, fill: '#6b7280' }}
-                           stroke="#9ca3af"
-                         />
-                         <Tooltip 
-                           contentStyle={{
-                             backgroundColor: '#ffffff',
-                             border: '1px solid #e5e7eb',
-                             borderRadius: '0.5rem',
-                             boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                           }}
-                           labelStyle={{ color: '#374151', fontWeight: 600 }}
-                           formatter={(value: number) => [`${value} employees`, 'Total']}
-                         />
-                         <Line 
-                           type="monotone" 
-                           dataKey="employees" 
-                           stroke={data.lineColor}
-                           strokeWidth={3}
-                           dot={{ fill: data.lineColor, r: 4 }}
-                           activeDot={{ r: 6 }}
-                         />
-                       </LineChart>
-                     </ResponsiveContainer>
-                </div>
-                 );
-               })()}
-              </div>
-            </Card>
 
             {/* Recent Activity */}
             <Card className="p-6">

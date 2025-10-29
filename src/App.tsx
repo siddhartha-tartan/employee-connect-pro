@@ -30,6 +30,24 @@ function AppContent() {
     return savedPage || 'dashboard';
   });
 
+  const [currentHash, setCurrentHash] = useState<string>(() => {
+    return typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
+  });
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1);
+      setCurrentHash(hash);
+      if (currentRole === 'employee') {
+        if (['dashboard', 'orders', 'agent'].includes(hash)) {
+          setCurrentPage(hash);
+        }
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [currentRole]);
+
   // Update page when role changes
   useEffect(() => {
     if (currentRole === 'hr') {
@@ -70,11 +88,13 @@ function AppContent() {
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
+    if (currentRole === 'employee') {
+      window.location.hash = page;
+    }
   };
 
   // Public Links page (accessible via #links or #link)
-  const hashNow = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
-  if (hashNow === 'links' || hashNow === 'link') {
+  if (currentHash === 'links' || currentHash === 'link') {
     return <Links />;
   }
 

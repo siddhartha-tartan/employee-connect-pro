@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -2224,47 +2225,59 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
       onNavigate={onNavigate}
     >
       <PageTransition pageKey="agent">
-        <div className="flex-1 h-[calc(100vh-4rem)]">
-          <div className="max-w-[1800px] mx-auto h-full flex gap-4 p-4">
+        <div className="flex-1 h-full">
+          <div className="max-w-[1800px] mx-auto h-full min-h-0 flex gap-4 px-4 pt-4 pb-4">
             {/* Main Chat Area */}
-            <div className="flex-1 flex">
-              <Card className="flex-1 flex flex-col rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
+            <div className="flex-1 flex min-h-0">
+              <Card className="flex-1 flex min-h-0 flex-col rounded-lg shadow-sm bg-white dark:bg-gray-800 overflow-hidden">
 
               {/* Messages Area */}
               <div ref={chatContainerRef} className="relative flex-1 overflow-y-auto p-6 space-y-4">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center max-w-2xl px-6">
-                      <div className="relative inline-block mb-6">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <div className="flex flex-col items-center mb-4">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                           <Bot className="w-6 h-6 text-primary" />
                         </div>
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+                          FinAgent
+                        </h3>
+                        
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">Hi {userData.name.split(' ')[0]}, ask about accounts, loans, or cards.</p>
                       </div>
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        Hi {userData.name.split(' ')[0]}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
-                        Your AI financial assistant for banking & investments
-                      </p>
-                      
-                      {/* Quick Actions - Compact Grid */}
-                      <div className="grid grid-cols-3 gap-3">
-                        {journeyTemplates.map((template, idx) => (
-                          <button
+                      <div className="flex flex-col items-stretch gap-2 max-w-2xl mx-auto">
+                        {journeyTemplates.map((template) => (
+                          <motion.button
                             key={template.id}
                             onClick={() => handleQuickAction(template)}
                             disabled={isThinking}
-                            className="group relative p-4 bg-white dark:from-gray-800 dark:to-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-all hover:shadow-md disabled:opacity-50 text-center"
+                            whileHover={{ y: -1 }}
+                            whileTap={{ scale: 0.98 }}
+                            transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+                            className="group flex w-full items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm disabled:opacity-50 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                           >
-                            {idx === 0 && (
-                              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
-                                ⚡ 5 mins
-                              </div>
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary flex-shrink-0">
+                              {template.id === 'bank-account' && <Building2 className="w-3.5 h-3.5" />}
+                              {template.id === 'personal-loan' && <Banknote className="w-3.5 h-3.5" />}
+                              {template.id === 'credit-card' && <CreditCard className="w-3.5 h-3.5" />}
+                            </span>
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <span className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">{template.title}</span>
+                              <span className="text-gray-300">•</span>
+                              <span className="text-xs text-gray-600 dark:text-gray-400 truncate whitespace-nowrap max-w-[220px] sm:max-w-[260px] md:max-w-[300px]">
+                                {template.description}
+                              </span>
+                            </div>
+                            {template.id === 'bank-account' && (
+                              <span className="ml-1.5 text-[10px] font-semibold text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-300 rounded-full px-1.5 py-0.5 whitespace-nowrap">
+                                in 5 minutes
+                              </span>
                             )}
-                            <div className="text-3xl mb-2">{template.icon}</div>
-                            <h4 className="text-gray-900 dark:text-white font-semibold text-xs leading-tight">{template.title}</h4>
-                          </button>
+                            <svg className="w-3 h-3 text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-all translate-x-0 group-hover:translate-x-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </motion.button>
                         ))}
                       </div>
                     </div>
@@ -2275,15 +2288,15 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
                       <div key={idx} className={`animate-fadeIn ${currentStepStartedAt && msg.timestamp && msg.timestamp < currentStepStartedAt ? 'opacity-60' : ''}`}>
                         {msg.type === 'user' && (
                           <div className="flex justify-end">
-                            <div className="max-w-[70%] bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-900 rounded-xl px-3 py-2 shadow-sm">
-                              <p className="text-xs leading-relaxed">{msg.text}</p>
+                            <div className="max-w-[70%] rounded-2xl px-4 py-2.5 text-sm shadow-md bg-gradient-to-tr from-[hsl(var(--primary))] to-blue-600 text-white">
+                              <p className="leading-relaxed">{msg.text}</p>
                             </div>
                           </div>
                         )}
 
                         {msg.type === 'thinking' && msg.steps && (
                           <div className="flex justify-start">
-                            <div className="inline-flex items-center space-x-2 bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700 rounded-full px-4 py-2 shadow-sm">
+                            <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-full px-4 py-2 shadow-sm ring-1 ring-blue-100/60 dark:ring-blue-800/40">
                               <div className="flex space-x-1">
                                 <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"></div>
                                 <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -2296,12 +2309,12 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
                         {msg.type === 'agent' && (
                           <div className="flex justify-start">
-                            <div className="max-w-[75%] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 shadow-sm">
+                            <div className="max-w-[75%] bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-750 rounded-2xl px-4 py-2.5 shadow-md ring-1 ring-blue-100/60 dark:ring-gray-700/60">
                               <div className="flex items-start space-x-2">
                                 <div className="w-6 h-6 bg-gradient-to-br from-[hsl(var(--primary))] to-blue-700 rounded-md flex items-center justify-center flex-shrink-0">
                                   <Bot className="w-3.5 h-3.5 text-white" />
                                 </div>
-                                <p className="text-xs text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-line pt-0.5">{formatText(msg.text)}</p>
+                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-line pt-0.5">{formatText(msg.text)}</p>
                               </div>
                             </div>
                           </div>
@@ -2880,10 +2893,10 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
           {/* Right Sidebar - Task Progress (Conditional) */}
           {(messages.length > 0 || activeJourney || journeySteps.length > 0) && (
-            <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 bg-white dark:bg-gray-800">
-                <h3 className="font-semibold text-sm text-gray-900 dark:text-white flex items-center">
-                  <svg className="w-5 h-5 mr-2 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-80 h-full bg-gradient-to-b from-white to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-y-auto rounded-xl overflow-hidden shadow-sm">
+              <div className="p-4 sticky top-0 z-10 bg-gradient-to-r from-[hsl(var(--primary))] to-blue-600 text-white shadow">
+                <h3 className="font-semibold text-sm text-white flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                   Task Progress
@@ -2893,7 +2906,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
               <div className="p-4 space-y-4">
                 {/* Active Journey Indicator */}
                 {activeJourney && (
-                  <Card className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg animate-fadeIn">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 ring-1 ring-blue-100/60 dark:ring-blue-800/60 rounded-lg animate-fadeIn">
                     <div className="flex items-start space-x-3">
                       <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
                         <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -2910,7 +2923,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
                 {/* Detailed Journey Steps */}
                 {journeySteps.length > 0 && (
-                  <Card className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <Card className="p-4 bg-white/70 dark:bg-gray-800/60 ring-1 ring-gray-200/60 dark:ring-gray-700/60 rounded-lg backdrop-blur-sm">
                     <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-3">Step-by-Step Progress</h4>
                     <div className="space-y-3">
                       {journeySteps.map((step, idx) => (
@@ -2952,7 +2965,7 @@ export const Agent: React.FC<AgentProps> = ({ onLogout, onNavigate }) => {
 
                 {/* Completed Tasks from Messages */}
                 {messages.filter(m => m.type === 'success').map((msg, idx) => (
-                  <Card key={idx} className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg animate-fadeIn">
+                  <Card key={idx} className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 ring-1 ring-green-200/60 dark:ring-green-800/60 rounded-lg animate-fadeIn">
                     <div className="flex items-start space-x-3">
                       <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
                         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

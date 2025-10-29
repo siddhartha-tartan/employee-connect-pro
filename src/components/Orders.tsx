@@ -205,28 +205,28 @@ export const Orders: React.FC<OrdersProps> = ({ onLogout, onNavigate }) => {
 
         {/* Applications Tab */}
         {activeTab === 'applications' && (
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {applications.map((app) => (
-              <Card key={app.id} className="p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-start space-x-4">
-                    <div className="text-5xl">{app.icon}</div>
+              <Card key={app.id} className="p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="text-3xl">{app.icon}</div>
                     <div>
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{app.name}</h3>
-                        <Badge className={app.statusColor}>
+                      <div className="flex items-center space-x-2 mb-0.5">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{app.name}</h3>
+                        <Badge className={`px-2 py-0.5 text-xs ${app.statusColor}`}>
                           {app.status}
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{app.type}</p>
-                      <p className="text-xs text-gray-500 mt-1">Applied on {app.appliedDate}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Applied on {app.appliedDate}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="mb-6">
-                  <div className="flex justify-between text-sm mb-2">
+                <div className="mb-4">
+                  <div className="flex justify-between text-xs mb-2">
                     <span className="text-gray-600 dark:text-gray-400">Application Progress</span>
                     <span className="font-semibold text-gray-900 dark:text-white">{app.progress}%</span>
                   </div>
@@ -243,12 +243,12 @@ export const Orders: React.FC<OrdersProps> = ({ onLogout, onNavigate }) => {
                 </div>
 
                 {/* Timeline */}
-                <div className="mb-6">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Application Timeline</h4>
-                  <div className="space-y-3">
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Application Timeline</h4>
+                  <div className="space-y-2">
                     {app.timeline.map((step, idx) => (
-                      <div key={idx} className="flex items-start space-x-3">
-                        <div className={`mt-1 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      <div key={idx} className="flex items-start space-x-2.5">
+                        <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${
                           step.completed ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
                         }`}>
                           {step.completed && (
@@ -258,7 +258,7 @@ export const Orders: React.FC<OrdersProps> = ({ onLogout, onNavigate }) => {
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className={`text-sm ${step.completed ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500'}`}>
+                          <p className={`text-xs ${step.completed ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500'}`}>
                             {step.step}
                           </p>
                           <p className="text-xs text-gray-500">{step.date}</p>
@@ -270,25 +270,25 @@ export const Orders: React.FC<OrdersProps> = ({ onLogout, onNavigate }) => {
 
                 {/* Next Action / Rejection Reason */}
                 {app.nextAction && (
-                  <div className={`rounded-lg p-4 ${
+                  <div className={`rounded-lg p-3 ${
                     app.status === 'Rejected' ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' :
                     app.status === 'Approved' ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' :
                     'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
                   }`}>
-                    <p className="text-sm font-semibold mb-1">
+                    <p className="text-xs font-semibold mb-1">
                       {app.status === 'Rejected' ? '❌ Rejection Reason:' :
                        app.status === 'Approved' ? '✅ Next Steps:' :
                        '⏳ Action Required:'}
                     </p>
                     {app.rejectionReason && (
-                      <p className="text-sm text-red-700 dark:text-red-400 mb-2">{app.rejectionReason}</p>
+                      <p className="text-xs text-red-700 dark:text-red-400 mb-2">{app.rejectionReason}</p>
                     )}
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{app.nextAction}</p>
+                    <p className="text-xs text-gray-700 dark:text-gray-300">{app.nextAction}</p>
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-2 mt-4">
+                <div className="flex flex-wrap gap-2 mt-3">
                   {app.status === 'Under Review' && (
                     <>
                       <Button size="sm">Upload Documents</Button>

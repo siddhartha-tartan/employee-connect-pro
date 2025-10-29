@@ -22,16 +22,39 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1);
+      if (hash === 'hr' && currentRole !== 'hr') {
+        setCurrentRoleState('hr');
+      } else if (hash === 'crm' && currentRole !== 'crm') {
+        setCurrentRoleState('crm');
+      } else if (['dashboard', 'orders', 'agent', 'links', 'link', ''].includes(hash) && currentRole !== 'employee') {
+        setCurrentRoleState('employee');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [currentRole]);
+
+  useEffect(() => {
     // Save to localStorage
     localStorage.setItem('currentRole', currentRole);
     
     // Update URL hash for non-employee roles
+    const currentHash = window.location.hash.slice(1);
     if (currentRole === 'hr') {
-      window.location.hash = 'hr';
+      if (currentHash !== 'hr') {
+        window.location.hash = 'hr';
+      }
     } else if (currentRole === 'crm') {
-      window.location.hash = 'crm';
+      if (currentHash !== 'crm') {
+        window.location.hash = 'crm';
+      }
     } else {
-      window.location.hash = 'dashboard';
+      const allowedEmployeeHashes = ['dashboard', 'orders', 'agent', 'links', 'link', ''];
+      if (!allowedEmployeeHashes.includes(currentHash)) {
+        window.location.hash = 'dashboard';
+      }
     }
   }, [currentRole]);
 
