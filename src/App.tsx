@@ -72,6 +72,12 @@ function AppContent() {
     setCurrentPage(page);
   };
 
+  // Public Links page (accessible via #links or #link)
+  const hashNow = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
+  if (hashNow === 'links' || hashNow === 'link') {
+    return <Links />;
+  }
+
   // Employee Interface - requires login
   if (currentRole === 'employee' && !isAuthenticated) {
     return <Login onLogin={handleLogin} />;
