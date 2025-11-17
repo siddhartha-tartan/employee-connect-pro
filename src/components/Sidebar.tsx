@@ -105,6 +105,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ),
           },
           {
+            id: 'onboard',
+            label: 'New Corporate',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 20h4v-8H4v8zm6 0h4V4h-4v16zm6 0h4v-5h-4v5z" />
+              </svg>
+            ),
+          },
+          {
             id: 'employees',
             label: 'Employees',
             icon: (

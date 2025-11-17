@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { PageTransition } from "./PageTransition";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { CorporateOnboardAgent } from "./CorporateOnboardAgent";
 
 interface CRMContentProps {
   activeTab: string;
@@ -93,9 +95,14 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
   ];
 
   // Repeat the employees to show a long list (70+ employees)
+  const banks = ['HDFC Bank', 'ICICI Bank', 'State Bank of India', 'Axis Bank', 'Kotak Mahindra Bank'];
+  const baseWithSalaryAccounts = baseEmployees.map((emp, idx) => ({
+    ...emp,
+    salaryAccountBank: banks[idx % banks.length],
+  }));
   const allEmployees = [
-    ...baseEmployees.map((emp, idx) => ({ ...emp, id: `EMP${String(idx + 1).padStart(3, '0')}` })),
-    ...baseEmployees.map((emp, idx) => ({ ...emp, id: `EMP${String(idx + 46).padStart(3, '0')}` })),
+    ...baseWithSalaryAccounts.map((emp, idx) => ({ ...emp, id: `EMP${String(idx + 1).padStart(3, '0')}` })),
+    ...baseWithSalaryAccounts.map((emp, idx) => ({ ...emp, id: `EMP${String(idx + 46).padStart(3, '0')}` })),
   ];
 
   const employeeDetails: Record<string, any> = {
@@ -146,6 +153,29 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
   const [newProductForm, setNewProductForm] = useState({ name: '', type: 'Credit Card', tier: 'Standard', criteria: '', benefits: '' });
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ criteria: string[]; benefits: string[] }>({ criteria: [], benefits: [] });
+  const [statusByEmpId, setStatusByEmpId] = useState<Record<string, string>>({});
+  const generateSignupLink = (empId: string) => `https://hdfc.com/salary-account?emp=${empId}`;
+  const markStatus = (empId: string, status: string) => {
+    setStatusByEmpId(prev => ({ ...prev, [empId]: status }));
+  };
+  const handleInviteSMS = (emp: any) => {
+    markStatus(emp.id, 'Invite Sent');
+  };
+  const handleInviteEmail = (emp: any) => {
+    markStatus(emp.id, 'Invite Sent');
+  };
+  const handleCopyLink = async (emp: any) => {
+    const link = generateSignupLink(emp.id);
+    try {
+      await navigator.clipboard.writeText(link);
+      markStatus(emp.id, 'Link Copied');
+    } catch {
+      markStatus(emp.id, 'Link Ready');
+    }
+  };
+  const handleScheduleKYC = (emp: any) => {
+    markStatus(emp.id, 'KYC Scheduled');
+  };
 
   const handleAnalyticsQuery = async () => {
     setIsAnalyzing(true);
@@ -255,6 +285,17 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
   });
   const currentCorp = corporates.find(c => c.id === selectedCorporate);
 
+  // Dedicated full-height layout for AI-style corporate onboarding
+  if (activeTab === 'onboard') {
+    return (
+      <PageTransition pageKey={activeTab}>
+        <div className="h-full px-4 sm:px-6 lg:px-8 py-4">
+          <CorporateOnboardAgent />
+        </div>
+      </PageTransition>
+    );
+  }
+
   return (
     <PageTransition pageKey={activeTab}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -266,9 +307,22 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
           {/* Header Section */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 p-6">
             <div className="relative z-10">
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Corporate Clients</h2>
-                <p className="text-gray-600 dark:text-gray-400">{corporates.length} active corporate partnerships</p>
+              <div className="mb-6 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Corporate Clients</h2>
+                  <p className="text-gray-600 dark:text-gray-400">{corporates.length} active corporate partnerships</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/80 dark:bg-gray-900/60 border-gray-200 dark:border-gray-700 text-xs shadow-sm hover:bg-white dark:hover:bg-gray-900"
+                  onClick={() => onTabChange('onboard')}
+                >
+                  <svg className="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 20h4v-8H4v8zm6 0h4V4h-4v16zm6 0h4v-5h-4v5z" />
+                  </svg>
+                  New corporate
+                </Button>
               </div>
 
               {/* Stats Section - Inside the gradient card */}
@@ -641,7 +695,7 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Department</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Salary</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tenure</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Credit Score</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Salary Account</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Products</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Last Active</th>
                   </tr>
@@ -687,17 +741,29 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
                           {emp.tenure} yrs
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white mr-2">{emp.creditScore}</span>
-                            <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full ${
-                                  emp.creditScore >= 80 ? 'bg-green-600' : 
-                                  emp.creditScore >= 70 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`} 
-                                style={{ width: `${(emp.creditScore / 100) * 100}%` }} 
-                              />
-                            </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm ${emp.salaryAccountBank === 'HDFC Bank' ? 'text-green-700 dark:text-green-400 font-semibold' : 'text-gray-900 dark:text-white'}`}>
+                              {emp.salaryAccountBank}
+                            </span>
+                            {emp.salaryAccountBank === 'HDFC Bank' ? null : statusByEmpId[emp.id] ? (
+                              <Badge className="bg-gray-100 text-gray-600 border border-gray-200 dark:bg-gray-800/40 dark:text-gray-300 dark:border-gray-700 opacity-80 text-[10px] font-medium">
+                                {statusByEmpId[emp.id]}
+                              </Badge>
+                            ) : (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    Initiate
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                  <DropdownMenuItem onClick={() => handleInviteSMS(emp)}>Send SMS invite</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleInviteEmail(emp)}>Send Email invite</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleCopyLink(emp)}>Copy signup link</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleScheduleKYC(emp)}>Schedule onsite KYC</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -765,7 +831,7 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Department</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Salary</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tenure</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Credit Score</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Salary Account</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Products</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Last Active</th>
                     </tr>
@@ -798,17 +864,29 @@ export const CRMContent: React.FC<CRMContentProps> = ({ activeTab, onTabChange }
                             {emp.tenure} yrs
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <span className="text-sm font-semibold text-gray-900 dark:text-white mr-2">{emp.creditScore}</span>
-                              <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                <div 
-                                  className={`h-2 rounded-full ${
-                                    emp.creditScore >= 80 ? 'bg-green-600' : 
-                                    emp.creditScore >= 70 ? 'bg-yellow-500' : 'bg-red-500'
-                                  }`} 
-                                  style={{ width: `${(emp.creditScore / 100) * 100}%` }} 
-                                />
-                              </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-sm ${emp.salaryAccountBank === 'HDFC Bank' ? 'text-green-700 dark:text-green-400 font-semibold' : 'text-gray-900 dark:text-white'}`}>
+                                {emp.salaryAccountBank}
+                              </span>
+                            {emp.salaryAccountBank === 'HDFC Bank' ? null : statusByEmpId[emp.id] ? (
+                                <Badge className="bg-gray-100 text-gray-600 border border-gray-200 dark:bg-gray-800/40 dark:text-gray-300 dark:border-gray-700 opacity-80 text-[10px] font-medium">
+                                  {statusByEmpId[emp.id]}
+                                </Badge>
+                              ) : (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button size="sm" variant="outline">
+                                      Initiate
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="start">
+                                    <DropdownMenuItem onClick={() => handleInviteSMS(emp)}>Send SMS invite</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleInviteEmail(emp)}>Send Email invite</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleCopyLink(emp)}>Copy signup link</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleScheduleKYC(emp)}>Schedule onsite KYC</DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
